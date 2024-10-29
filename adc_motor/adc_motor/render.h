@@ -83,7 +83,12 @@ public:
 	int current_window;
 	int npoints_global;
 	int samples_global;
+	int my_image_width;
+	int my_image_height;
+	ID3D12Resource* my_texture;
 	HWND m_hWnd{}, m_hWndButton{}, m_hWndEdit{};
+	D3D12_CPU_DESCRIPTOR_HANDLE my_texture_srv_cpu_handle;
+	D3D12_GPU_DESCRIPTOR_HANDLE my_texture_srv_gpu_handle;
 	static LRESULT CALLBACK app_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK wnd_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//void paint(std::vector<float>& data);

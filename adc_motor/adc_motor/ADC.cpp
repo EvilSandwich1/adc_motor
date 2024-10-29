@@ -91,8 +91,8 @@ ADC::ADC()
     try 
     {
         //create_controls();
-        this->init_e440();
-        this->stream_setup();
+        //this->init_e440();
+        //this->stream_setup();
         //this->frame();
     }
     catch (const std::exception& e)
@@ -324,7 +324,7 @@ vector<float>& ADC::data_proc() {
      {
          ULONG s;
          InterlockedExchange(&s, *sync);
-         cout << ".......... " << setw(8) << s << "\r";
+         //cout << ".......... " << setw(8) << s << "\r";
          if (WAIT_OBJECT_0 == WaitForSingleObject(hThread, 0)) { complete = 1; break; }
          Sleep(10);
      }

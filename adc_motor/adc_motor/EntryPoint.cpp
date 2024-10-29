@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_DEPRECATE
+#pragma warning (disable : 4996)
 #include "ADC.h"
 #include "render.h"
 
@@ -22,9 +25,89 @@
 #pragma comment(lib, "dxguid.lib")
 #endif
 
+
+
 ADC adc{};
 render ren{};
+bool ShowColormapSelector(const char* label);
 
+static void HelpMarker(const char* desc)
+{
+	ImGui::TextDisabled("(?)");
+	if (ImGui::BeginItemTooltip())
+	{
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
+void ShowAboutBox(bool* p_open) {
+	if (!ImGui::Begin("About", p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::End();
+		return;
+	}
+	ImGui::Dummy(ImVec2(70.0f, 20.0f));
+	ImGui::SameLine();
+	ImGui::Text("Version 1.0");
+	/*ImGui::Text("CPU handle = %p", ren.my_texture_srv_cpu_handle.ptr);
+	ImGui::Text("GPU handle = %p", ren.my_texture_srv_gpu_handle.ptr);
+	ImGui::Text("size = %d x %d", ren.my_image_width, ren.my_image_height);*/
+	// Note that we pass the GPU SRV handle here, *not* the CPU handle. We're passing the internal pointer value, cast to an ImTextureID
+	ImGui::Image((ImTextureID)ren.my_texture_srv_gpu_handle.ptr, ImVec2((float)ren.my_image_width, (float)ren.my_image_height));
+	ImGui::End();
+}
+
+void ShowEditStyle(bool* p_open_style) {
+	if (!ImGui::Begin("Edit styles", p_open_style, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::End();
+		return;
+	}
+	const char* items_styles[] = { "Light", "Dark", "Classic" };
+	static int current_style = 1;
+	ImGui::Combo("Style", &current_style, items_styles, IM_ARRAYSIZE(items_styles));
+
+	switch (current_style) {
+	case 0:
+		ImGui::StyleColorsLight();
+		ImPlot::StyleColorsLight();
+		break;
+	case 1:
+		ImGui::StyleColorsDark();
+		ImPlot::StyleColorsDark();
+		break;
+	case 2:
+		ImGui::StyleColorsClassic();
+		ImPlot::StyleColorsClassic();
+		break;
+	default:
+		ImGui::StyleColorsLight();
+		ImPlot::StyleColorsLight();
+		break;
+	}
+
+	ShowColormapSelector("Line Style");
+
+	ImGui::End();
+}
+
+bool ShowColormapSelector(const char* label) {
+	ImPlotContext& gp = *GImPlot;
+	bool set = false;
+	if (ImGui::BeginCombo(label, gp.ColormapData.GetName(gp.Style.Colormap))) {
+		for (int i = 0; i < gp.ColormapData.Count; ++i) {
+			const char* name = gp.ColormapData.GetName(i);
+			if (ImGui::Selectable(name, gp.Style.Colormap == i)) {
+				gp.Style.Colormap = i;
+				ImPlot::BustItemCache();
+				set = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return set;
+}
 
 int main() {
 
@@ -34,6 +117,13 @@ int main() {
 	static int npoints = 1024;
 	static int samples = 512;
 	setlocale(LC_ALL, "en_us.utf8");
+
+	static bool p_open = false;
+	static bool p_open_ovr = false;
+	static bool p_open_style = false;
+
+	adc.init_e440();
+	adc.stream_setup();
 
 	// Main loop
 	bool done = false;
@@ -57,13 +147,52 @@ int main() {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		bool show_demo_window = true;
+		bool show_demo_window = false;
 		if (show_demo_window) {
 			ImGui::ShowDemoWindow(&show_demo_window);
 			ImPlot::ShowDemoWindow(&show_demo_window);
 		}
 
-		ImGui::Begin("Main");
+		if (p_open) {
+			ShowAboutBox(&p_open);
+		}
+/*		if (p_open_ovr) {
+			ShowOverloadWindow(&p_open_ovr);
+		}*/
+		if (p_open_style) {
+			ShowEditStyle(&p_open_style);
+		}
+
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Quit")) {
+					goto quit;
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Edit"))
+			{
+				//ImGui::MenuItem("Set coefficients", NULL, &p_open_ovr);
+				ImGui::MenuItem("Edit styles", NULL, &p_open_style);
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("About"))
+			{
+				ImGui::MenuItem("About", NULL, &p_open);
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
+		static bool use_work_area = true;
+		static ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(use_work_area ? viewport->WorkPos : viewport->Pos);
+		ImGui::SetNextWindowSize(use_work_area ? viewport->WorkSize : viewport->Size);
+
+		ImGui::Begin("Main", NULL, flags);
 		ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_Reorderable;
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -95,6 +224,8 @@ int main() {
 		//Sleep(1);
 		
 	}
+	quit:
 	ren.cleanup(L"MyAppClass");
+	adc.close();
 	return 0;
 }

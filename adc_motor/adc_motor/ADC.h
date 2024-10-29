@@ -56,12 +56,11 @@ class ADC
 		void stream_setup();
 		float data_avg(std::vector<float>& dataStream);
 		void pffft(int npoints, int window_id);
-
-	private:
 		int init_e440();
+		void close();
+	private:
 		HINSTANCE CallCreateInstance(LPCWSTR name);
 		//void create_controls();
 		//void display();
-		void close();
 		//UINT_PTR const IDT_TIMER;
 };

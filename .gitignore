@@ -1,0 +1,16 @@
+#vs
+**/.vs/
+*.vcxproj
+**/Debug
+**/Release
+*.filters
+*.users
+*.user
+Project1/
+primer/
+imgui/
+implot/
+pffft/
+!Application Window/Application Window/include/imgui
+!Application Window/Application Window/include/implot
+!Application Window/Application Window/include/pffft

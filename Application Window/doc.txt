@@ -1,0 +1,3 @@
+buffer = 10000;
+buffer_long = 100000;
+freq = 60 kHz - 1s/60000 = 10000 frames per 1/60 sec

@@ -30,6 +30,7 @@
 ADC adc{};
 render ren{};
 bool ShowColormapSelector(const char* label);
+static bool connectDone = false;
 
 static void HelpMarker(const char* desc)
 {
@@ -122,8 +123,8 @@ int main() {
 	static bool p_open_ovr = false;
 	static bool p_open_style = false;
 
-	adc.init_e440();
-	adc.stream_setup();
+	//adc.init_e440();
+	//adc.stream_setup();
 
 	// Main loop
 	bool done = false;
@@ -142,7 +143,27 @@ int main() {
 		if (done)
 			break;
 		//float* data = adc.frame();
-		float avg = adc.data_avg(adc.data_proc());
+
+		if (ren.isConnected && !connectDone) {
+			if (adc.init_e440() && adc.stream_setup()) {
+				connectDone = true;
+			}
+			else {
+				ren.isConnected = false;
+				connectDone = false;
+			}
+		}
+		if (ren.disconnect) {
+			adc.disconnect();
+			ren.disconnect = false;
+			connectDone = false;
+		}
+
+		
+		float avg = 0;
+		if (ren.isConnected) {
+			avg = adc.data_avg(adc.data_proc());
+		}
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -197,21 +218,34 @@ int main() {
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 		if (ImGui::BeginTabBar("Plots/plots"), tab_bar_flags) {
-			if (ImGui::BeginTabItem("Scrolling")) {
-				ren.scrolling(avg);
-				ImGui::EndTabItem();
-			}
 			if (ImGui::BeginTabItem("Oscilloscope")) {
-				if (adc.ready_swap) {
-					tmp_buffer = buffer_long;
+				if (ren.isConnected) {
+					if (adc.ready_swap) {
+						tmp_buffer = buffer_long;
+					}
+				}
+				if (tmp_buffer.size() <= 3) {
+					tmp_buffer.resize(32);
+					memset(&tmp_buffer[0], 0, 32 * sizeof tmp_buffer[0]);
 				}
 				ren.oscilloscope(tmp_buffer, samples);
+				ren.connect();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Fourier")) {
-				adc.pffft(npoints, ren.current_window);
-				std::vector<float>& tmp = adc.pffft_buffer;
-				ren.fourier(tmp, npoints);
+				if (ren.isConnected) {
+					adc.pffft(npoints, ren.current_window);
+					std::vector<float>& tmp = adc.pffft_buffer;
+					ren.fourier(tmp, npoints);
+				}
+				ren.connect();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Scrolling")) {
+				if (ren.isConnected) {
+					ren.scrolling(avg);
+				}
+				ren.connect();
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -226,6 +260,8 @@ int main() {
 	}
 	quit:
 	ren.cleanup(L"MyAppClass");
-	adc.close();
+	if (ren.isConnected) {
+		adc.disconnect();
+	}
 	return 0;
 }

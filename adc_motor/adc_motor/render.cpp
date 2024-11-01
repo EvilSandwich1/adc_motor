@@ -209,6 +209,20 @@ void render::demo() {
     }
 }
 
+void render::connect() {
+    if (!isConnected) {
+        if (ImGui::Button("Connect", ImVec2(150.0f, 20.0f))) {
+            isConnected = true;
+        }
+    }
+    else {
+        if (ImGui::Button("Disconnect", ImVec2(150.0f, 20.0f))) {
+            isConnected = false;
+            disconnect = true;
+        }
+    }
+}
+
 void render::scrolling(float data) {
     static int counter = 0;
     t += ImGui::GetIO().DeltaTime;

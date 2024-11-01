@@ -125,7 +125,7 @@ string char_to_str(const char* test)
     return str;
 }
 
-int ADC::init_e440()
+bool ADC::init_e440()
 {
 #ifdef WIN64
     CallCreateInstance(L"lcomp64.dll");
@@ -137,41 +137,40 @@ int ADC::init_e440()
 #define M_OK(x,e)   do {  } while(0)
 
     LUnknown* pIUnknown = CreateInstance(0);
-    if (pIUnknown == NULL) { M_FAIL(char_to_str("CreateInstance"), nullptr); return 0; }
+    if (pIUnknown == NULL) { M_FAIL(char_to_str("CreateInstance"), nullptr); return false; }
 
     HRESULT hr = pIUnknown->QueryInterface(IID_ILDEV, (void**)&pI);
-    if (!SUCCEEDED(hr)) { M_FAIL(char_to_str("QueryInterface"), nullptr); return 0; }
+    if (!SUCCEEDED(hr)) { M_FAIL(char_to_str("QueryInterface"), nullptr); return false; }
 
     status = pIUnknown->Release();
     M_OK("Release IUnknown", endl);
 
     HANDLE hVxd = pI->OpenLDevice(); // открываем устройство
-    if (hVxd == INVALID_HANDLE_VALUE) { M_FAIL(char_to_str("OpenLDevice"), hVxd); this->close(); goto end; }
+    if (hVxd == INVALID_HANDLE_VALUE) { M_FAIL(char_to_str("OpenLDevice"), hVxd); this->disconnect(); return false; }
     else M_OK("OpenLDevice", endl);
 
     status = pI->GetSlotParam(&sl);
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("GetSlotParam"), status); goto end; }
+    if (status != L_SUCCESS) { M_FAIL(char_to_str("GetSlotParam"), status); return false; }
     else M_OK("GetSlotParam", endl);
 
     status = pI->LoadBios("e440"); // загружаем биос в модуль
-    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) { M_FAIL(char_to_str("LoadBios"), status); goto end; }
+    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) { M_FAIL(char_to_str("LoadBios"), status); return false; }
     else M_OK("LoadBios", endl);
 
     status = pI->PlataTest(); // тестируем успешность загрузки и работоспособность биос
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("PlataTest"), status); goto end; }
+    if (status != L_SUCCESS) { M_FAIL(char_to_str("PlataTest"), status); return false; }
     else M_OK("PlataTest", endl);
 
     status = pI->ReadPlataDescr(&pd); // считываем данные о конфигурации платы/модул€. 
     // ќЅя«ј“≈Ћ№Ќќ ƒ≈Ћј“№! (иначе расчеты параметров сбора данных невозможны тк нужна информаци€ о названии модул€ и частоте кварца )
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("ReadPlataDescr"), status); goto end; }
+    if (status != L_SUCCESS) { M_FAIL(char_to_str("ReadPlataDescr"), status); return false; }
     else M_OK("ReadPlataDescr", endl);
     pp.s_Type = L_ASYNC_ADC_INP;
     pp.Chn[0] = 0b00100000; // 0 канал дифф. подключение (в общем случае лог. номер канала)
     status = pI->EnableCorrection();
     pp.dRate = 400.0;
     //display();
-end:
-    return 0;
+    return true;
 }
 /*void ADC::display() {
     wstringstream wss;
@@ -190,9 +189,9 @@ float* ADC::frame(){
 //  return datafloat;
 }
 
-void ADC::stream_setup() {
+bool ADC::stream_setup() {
     status = pI->RequestBufferStream(&tm, L_STREAM_ADC);
-    if (status != L_SUCCESS) { M_FAIL("RequestBufferStream(ADC)", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("RequestBufferStream(ADC)", status); return false; }
     else M_OK("RequestBufferStream(ADC)", endl);
 
     adcPar.t1.s_Type = L_ADC_PARAM;
@@ -217,22 +216,22 @@ void ADC::stream_setup() {
     adcPar.t1.AdcEna = 1;
 
     status = pI->FillDAQparameters(&adcPar.t1);
-    if (status != L_SUCCESS) { M_FAIL("FillDAQparameters(ADC)", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("FillDAQparameters(ADC)", status); return false; }
     else M_OK("FillDAQparameters(ADC)", endl);
 
     status = pI->SetParametersStream(&adcPar.t1, &tm, (void**)&datas, (void**)&sync, L_STREAM_ADC);
-    if (status != L_SUCCESS) { M_FAIL("SetParametersStream(ADC)", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("SetParametersStream(ADC)", status); return false; }
     else M_OK("SetParametersStream(ADC)", endl);
 
     IrqStep = adcPar.t1.IrqStep; // обновили глобальные переменные котрые потом используютс€ в ServiceThread
     pages = adcPar.t1.Pages;
 
     pI->GetParameter(L_POINT_SIZE, &pointsize);
-    if (status != L_SUCCESS) { M_FAIL("GetParameter", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("GetParameter", status); return false; }
     else M_OK("GetParameter", endl);
 
     status = pI->InitStartLDevice(); // »нициализируем внутренние переменные драйвера
-    if (status != L_SUCCESS) { M_FAIL("InitStartLDevice(ADC)", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("InitStartLDevice(ADC)", status); return false; }
     else M_OK("InitStartLDevice(ADC)", endl);
 
     hThread = CreateThread(0, 0x2000, ServiceThread, 0, 0, &Tid); // —оздаем и запускаем поток сбора данных
@@ -240,8 +239,10 @@ void ADC::stream_setup() {
     status = pI->EnableCorrection();
 
     status = pI->StartLDevice(); // «апускаем сбор в драйвере
-    if (status != L_SUCCESS) { M_FAIL("StartLDevice(ADC)", status); return; }
+    if (status != L_SUCCESS) { M_FAIL("StartLDevice(ADC)", status); return false; }
     else M_OK("StartLDevice(ADC)", endl);
+
+    return true;
 }
 
 void* ADC::stream() {
@@ -303,7 +304,7 @@ void ADC::pffft(int npoints, int window_id) {
     pffft_destroy_setup(pffft_setup);
 }
 
- void ADC::close() {
+ void ADC::disconnect() {
      status = pI->StopLDevice(); // ќстановили сбор
      if (status != L_SUCCESS) { M_FAIL("StopLDevice(ADC)", status); return; }
      else M_OK("StopLDevice(ADC)", endl);
@@ -324,7 +325,7 @@ vector<float>& ADC::data_proc() {
      {
          ULONG s;
          InterlockedExchange(&s, *sync);
-         //cout << ".......... " << setw(8) << s << "\r";
+         cout << ".......... " << setw(8) << s << "\r";
          if (WAIT_OBJECT_0 == WaitForSingleObject(hThread, 0)) { complete = 1; break; }
          Sleep(10);
      }

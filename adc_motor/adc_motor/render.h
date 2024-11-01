@@ -85,6 +85,9 @@ public:
 	int samples_global;
 	int my_image_width;
 	int my_image_height;
+	bool isConnected;
+	bool disconnect;
+	void connect();
 	ID3D12Resource* my_texture;
 	HWND m_hWnd{}, m_hWndButton{}, m_hWndEdit{};
 	D3D12_CPU_DESCRIPTOR_HANDLE my_texture_srv_cpu_handle;

@@ -57,7 +57,7 @@ render::render() {
     catch (const std::exception& e)
     {
         string excpt_data = e.what();
-        MessageBox(nullptr, wstring(begin(excpt_data), end(excpt_data)).c_str(), L"Ошибка", MB_ICONERROR | MB_OK);
+        MessageBox(nullptr, wstring(begin(excpt_data), end(excpt_data)).c_str(), L"Error", MB_ICONERROR | MB_OK);
         ExitProcess(EXIT_FAILURE);
     }
 }
@@ -224,11 +224,12 @@ void render::connect() {
 }
 
 void render::scrolling(float data) {
-    static int counter = 0;
-    t += ImGui::GetIO().DeltaTime;
-    dataAnalog.AddPoint(t, data);
 
-    ImGui::InputFloat("Watt/volt coefficient", &wt_vt, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_None); //ImGuiInputTextFlags_CharsDecimal
+    if (isConnected) {
+        t += ImGui::GetIO().DeltaTime;
+        dataAnalog.AddPoint(t, data);
+    }
+
     double k_wtvt_max = wt_vt * 10;
     double k_wtvt_min = wt_vt * 0;
     ImPlotAxisFlags flagsx = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_Foreground;
@@ -245,11 +246,14 @@ void render::scrolling(float data) {
         ImPlot::SetupAxis(ImAxis_Y2, "Watt", flagsy2);
         ImPlot::SetupAxisLimits(ImAxis_Y2, 0, k_wtvt_max);
         ImPlot::SetupAxisLinks(ImAxis_Y2, &k_wtvt_min, &k_wtvt_max);
-        ImPlot::PlotLine("", &dataAnalog.Data[0].x, &dataAnalog.Data[0].y, dataAnalog.Data.size(), 0, dataAnalog.Offset, 2 * sizeof(float));
+        if (isConnected) {
+            ImPlot::PlotLine("", &dataAnalog.Data[0].x, &dataAnalog.Data[0].y, dataAnalog.Data.size(), 0, dataAnalog.Offset, 2 * sizeof(float));
+        }
         ImPlot::EndPlot();
     }
 
     ImGui::Text("Voltage = %f", data);
+    ImGui::InputFloat("Watt/volt coefficient", &wt_vt, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_None); //ImGuiInputTextFlags_CharsDecimal
 }
 
 void render::oscilloscope(std::vector<float> data, int samples) {
@@ -267,6 +271,7 @@ void render::oscilloscope(std::vector<float> data, int samples) {
         ImPlot::SetupAxisLimits(ImAxis_X1, 0, 10, 2);
         ImPlot::SetupAxis(ImAxis_X1, "Time, s", flags);
         ImPlot::SetupAxisLimits(ImAxis_Y1, *min_element(data.begin(), data.end()), *max_element(data.begin(), data.end()));
+        ImPlot::SetupAxis(ImAxis_Y1, "Time, s", flags);
         ImPlot::PlotLine("", &x_line[0], &data[start + 2], samples, 0, NULL, sizeof(float));
         if (showCursor) {
             static double drag_tag = data[0];

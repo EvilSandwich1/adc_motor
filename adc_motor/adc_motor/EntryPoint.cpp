@@ -115,6 +115,7 @@ int main() {
 	static float f = 0.0f;
 	std::vector<float>& buffer_long = adc.buffer_long;
 	std::vector<float> tmp_buffer(1024, 0);
+	std::vector<float> tmp_fourier(1024, 0);
 	static int npoints = 1024;
 	static int samples = 512;
 	setlocale(LC_ALL, "en_us.utf8");
@@ -177,9 +178,6 @@ int main() {
 		if (p_open) {
 			ShowAboutBox(&p_open);
 		}
-/*		if (p_open_ovr) {
-			ShowOverloadWindow(&p_open_ovr);
-		}*/
 		if (p_open_style) {
 			ShowEditStyle(&p_open_style);
 		}
@@ -195,7 +193,6 @@ int main() {
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
-				//ImGui::MenuItem("Set coefficients", NULL, &p_open_ovr);
 				ImGui::MenuItem("Edit styles", NULL, &p_open_style);
 				ImGui::EndMenu();
 			}
@@ -235,16 +232,18 @@ int main() {
 			if (ImGui::BeginTabItem("Fourier")) {
 				if (ren.isConnected) {
 					adc.pffft(npoints, ren.current_window);
-					std::vector<float>& tmp = adc.pffft_buffer;
-					ren.fourier(tmp, npoints);
+					tmp_fourier = adc.pffft_buffer;
 				}
+				if (tmp_fourier.size() <= 3) {
+					tmp_fourier.resize(32);
+					memset(&tmp_fourier[0], 0, 32 * sizeof tmp_fourier[0]);
+				}
+				ren.fourier(tmp_fourier, npoints);
 				ren.connect();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Scrolling")) {
-				if (ren.isConnected) {
-					ren.scrolling(avg);
-				}
+				ren.scrolling(avg);
 				ren.connect();
 				ImGui::EndTabItem();
 			}

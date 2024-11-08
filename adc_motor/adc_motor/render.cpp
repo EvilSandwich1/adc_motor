@@ -211,14 +211,26 @@ void render::demo() {
 
 void render::connect() {
     if (!isConnected) {
-        if (ImGui::Button("Connect", ImVec2(150.0f, 20.0f))) {
+        if (ImGui::Button("Connect ADC", ImVec2(150.0f, 20.0f))) {
             isConnected = true;
         }
     }
     else {
-        if (ImGui::Button("Disconnect", ImVec2(150.0f, 20.0f))) {
+        if (ImGui::Button("Disconnect ADC", ImVec2(150.0f, 20.0f))) {
             isConnected = false;
             disconnect = true;
+        }
+    }
+    ImGui::SameLine();
+    if (!isMotorConnected) {
+        if (ImGui::Button("Connect Malysh", ImVec2(150.0f, 20.0f))) {
+            isMotorConnected = true;
+        }
+    }
+    else {
+        if (ImGui::Button("Disconnect Malysh", ImVec2(150.0f, 20.0f))) {
+            isMotorConnected = false;
+            disconnectMotor = true;
         }
     }
 }
@@ -375,6 +387,22 @@ void render::fourier(std::vector<float>& data, int npoints) {
 
     const char* items_windows[] = { "Rectangular", "Hamming", "Flat top" };
     ImGui::Combo("Window", &current_window, items_windows, IM_ARRAYSIZE(items_windows));
+}
+
+char* render::stepper_input() {
+    static char text[1024] = "";
+    sendCmd = false;
+    static ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
+    if (ImGui::InputTextMultiline("##input", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags))
+        sendCmd = true;
+    return text;
+}
+
+void render::stepper_output(char* outputData) {
+    static ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly;
+    char data[1024] = { 0 };
+    strcat_s(data, outputData);
+    ImGui::InputTextMultiline("##output", data, IM_ARRAYSIZE(data), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags);
 }
 
 void render::d3dctx() {

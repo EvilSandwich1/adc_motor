@@ -3,6 +3,7 @@
 #pragma warning (disable : 4996)
 #include "ADC.h"
 #include "render.h"
+#include "stepper.h"
 
 #include ".\include\imgui\imgui.h"
 #include ".\include\imgui\imconfig.h"
@@ -29,8 +30,12 @@
 
 ADC adc{};
 render ren{};
+stepper motor{};
 bool ShowColormapSelector(const char* label);
 static bool connectDone = false;
+static bool connectDoneMotor = false;
+char output[1024] = { 0 };
+char cmd[1024] = { 0 };
 
 static void HelpMarker(const char* desc)
 {
@@ -111,7 +116,6 @@ bool ShowColormapSelector(const char* label) {
 }
 
 int main() {
-
 	static float f = 0.0f;
 	std::vector<float>& buffer_long = adc.buffer_long;
 	std::vector<float> tmp_buffer(1024, 0);
@@ -123,9 +127,6 @@ int main() {
 	static bool p_open = false;
 	static bool p_open_ovr = false;
 	static bool p_open_style = false;
-
-	//adc.init_e440();
-	//adc.stream_setup();
 
 	// Main loop
 	bool done = false;
@@ -160,6 +161,19 @@ int main() {
 			connectDone = false;
 		}
 
+		if (ren.isMotorConnected && !connectDoneMotor) {
+			if (motor.initialize())
+				connectDoneMotor = true;
+			else {
+				ren.isMotorConnected = false;
+				connectDoneMotor = false;
+			}
+		}
+		if (ren.disconnectMotor) {
+			motor.close();
+			ren.disconnectMotor = false;
+			connectDoneMotor = false;
+		}
 		
 		float avg = 0;
 		if (ren.isConnected) {
@@ -169,7 +183,7 @@ int main() {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		bool show_demo_window = false;
+		bool show_demo_window = true;
 		if (show_demo_window) {
 			ImGui::ShowDemoWindow(&show_demo_window);
 			ImPlot::ShowDemoWindow(&show_demo_window);
@@ -205,7 +219,7 @@ int main() {
 		}
 
 		static bool use_work_area = true;
-		static ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
+		static ImGuiWindowFlags flags = NULL;//ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(use_work_area ? viewport->WorkPos : viewport->Pos);
 		ImGui::SetNextWindowSize(use_work_area ? viewport->WorkSize : viewport->Size);
@@ -227,6 +241,18 @@ int main() {
 				}
 				ren.oscilloscope(tmp_buffer, samples);
 				ren.connect();
+				//char* cmd = ren.stepper_input();
+				memset(cmd, 0, 1024);
+				strcpy(cmd, ren.stepper_input());
+				strcat_s(cmd, "\n");
+				assert(sizeof(cmd) == 1024);
+				if (ren.sendCmd) {
+					motor.write_cmd(cmd);
+					memset(output, 0, 1024 * sizeof(char));
+					Sleep(100);
+					strcpy(output, motor.read());
+				}
+				ren.stepper_output(output);
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Fourier")) {
@@ -240,11 +266,21 @@ int main() {
 				}
 				ren.fourier(tmp_fourier, npoints);
 				ren.connect();
+				char* cmd = ren.stepper_input();
+				if (ren.sendCmd) {
+					motor.write_cmd(cmd);
+					ren.stepper_output(motor.read());
+				}
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Scrolling")) {
 				ren.scrolling(avg);
 				ren.connect();
+				char* cmd = ren.stepper_input();
+				if (ren.sendCmd) {
+					motor.write_cmd(cmd);
+					ren.stepper_output(motor.read());
+				}
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -262,5 +298,6 @@ int main() {
 	if (ren.isConnected) {
 		adc.disconnect();
 	}
+	motor.close();
 	return 0;
 }

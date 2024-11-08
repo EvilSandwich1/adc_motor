@@ -78,7 +78,6 @@ public:
 		IDT_TIMER
 	};
 	void init_window_class();
-	void settext(HWND hwnd, std::wstring str);
 	~render();
 	int current_window;
 	int npoints_global;
@@ -86,7 +85,10 @@ public:
 	int my_image_width;
 	int my_image_height;
 	bool isConnected;
+	bool isMotorConnected;
 	bool disconnect;
+	bool disconnectMotor;
+	bool sendCmd;
 	void connect();
 	ID3D12Resource* my_texture;
 	HWND m_hWnd{}, m_hWndButton{}, m_hWndEdit{};
@@ -100,6 +102,8 @@ public:
 	void scrolling(float data);
 	void oscilloscope(std::vector<float> data, int samples);
 	void fourier(std::vector<float>& data, int npoints);
+	char* stepper_input();
+	void stepper_output(char* outputData);
 	void create_controls();
 	bool CreateDeviceD3D(HWND hWnd);
 	void CleanupDeviceD3D();

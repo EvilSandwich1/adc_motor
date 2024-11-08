@@ -16,8 +16,10 @@ OVERLAPPED overRead, overWrite;
 
 using namespace std;
 
+StpCoord current_coord;
 
-STEPPER::STEPPER()
+
+stepper::stepper()
 {
     try {
 
@@ -30,59 +32,67 @@ STEPPER::STEPPER()
     }
 }
 
-void STEPPER::initialize() {
-    hSerial = CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
-    memset(&overRead, 0, sizeof(OVERLAPPED));
-    memset(&overWrite, 0, sizeof(OVERLAPPED));
+bool stepper::initialize() {
+    try {
+        hSerial = CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+        memset(&overRead, 0, sizeof(OVERLAPPED));
+        memset(&overWrite, 0, sizeof(OVERLAPPED));
 
-    overRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    overWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        overRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        overWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    COMMTIMEOUTS ComTimeOut;
-    ComTimeOut.ReadIntervalTimeout = MAXDWORD;
-    ComTimeOut.ReadTotalTimeoutConstant = 0;
-    ComTimeOut.ReadTotalTimeoutMultiplier = 0;
-    ComTimeOut.WriteTotalTimeoutMultiplier = 0;
-    ComTimeOut.WriteTotalTimeoutConstant = 5000;
-    SetCommTimeouts(hSerial, &ComTimeOut);
+        COMMTIMEOUTS ComTimeOut;
+        ComTimeOut.ReadIntervalTimeout = MAXDWORD;
+        ComTimeOut.ReadTotalTimeoutConstant = 0;
+        ComTimeOut.ReadTotalTimeoutMultiplier = 0;
+        ComTimeOut.WriteTotalTimeoutMultiplier = 0;
+        ComTimeOut.WriteTotalTimeoutConstant = 5000;
+        SetCommTimeouts(hSerial, &ComTimeOut);
 
-    if (hSerial == INVALID_HANDLE_VALUE)
-    {
-        //  Handle the error.
-        throw runtime_error ("CreateFile failed with error %d.\n");
-        return;
+        if (hSerial == INVALID_HANDLE_VALUE)
+        {
+            //  Handle the error.
+            throw runtime_error("CreateFile failed with error %d.\n");
+            return false;
+        }
+        SecureZeroMemory(&dcb, sizeof(DCB));
+        dcb.DCBlength = sizeof(DCB);
+
+        fSuccess = GetCommState(hSerial, &dcb);
+        if (!fSuccess)
+        {
+            throw runtime_error("GetCommState error");
+            return false;
+        }
+
+        dcb.BaudRate = CBR_115200;     //  baud rate
+        dcb.ByteSize = 8;             //  data size, xmit and rcv
+        dcb.Parity = NOPARITY;      //  parity bit
+        dcb.StopBits = ONESTOPBIT;    //  stop bit
+
+        fSuccess = SetCommState(hSerial, &dcb);
+
+        if (!fSuccess)
+        {
+            throw runtime_error("SetCommState error\n");
+            return false;
+        }
+        memset(inputData, 0, sizeof(inputData));
+        SetupComm(hSerial, 1024, 1024);
+        COMSTAT comStat;
+        ClearCommError(hSerial, &dwError, &comStat);
+        return true;
     }
-    SecureZeroMemory(&dcb, sizeof(DCB));
-    dcb.DCBlength = sizeof(DCB);
-
-    fSuccess = GetCommState(hSerial, &dcb);
-    if (!fSuccess)
+    catch (const std::exception& e)
     {
-        throw runtime_error("GetCommState error");
-        return;
+        string excpt_data = e.what();
+        MessageBox(nullptr, wstring(begin(excpt_data), end(excpt_data)).c_str(), L"Error", MB_ICONERROR | MB_OK);
     }
-
-    dcb.BaudRate = CBR_115200;     //  baud rate
-    dcb.ByteSize = 8;             //  data size, xmit and rcv
-    dcb.Parity = NOPARITY;      //  parity bit
-    dcb.StopBits = ONESTOPBIT;    //  stop bit
-
-    fSuccess = SetCommState(hSerial, &dcb);
-
-    if (!fSuccess)
-    {
-        throw runtime_error("SetCommState error\n");
-        return;
-    }
-    memset(inputData, 0, sizeof(inputData));
-    SetupComm(hSerial, 1024, 1024);
-    char outputData[1024] = {};
-    COMSTAT comStat;
-    ClearCommError(hSerial, &dwError, &comStat);
 }
 
-void STEPPER::read(){
+char* stepper::read(){
     bool check = true;
+    memset(inputData, 0, 1024);
     do {
         if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, &overRead) && GetLastError() == ERROR_IO_PENDING)
         {
@@ -90,24 +100,65 @@ void STEPPER::read(){
         }
         else check = false;
     } while (check);
-    return;
+    return inputData;
 }
 
-void STEPPER::writeCmd(LPCVOID outputData) { //todo
+void stepper::write_cmd(char* outputData) { 
     bool check = true;
     do {
+    check = false;
         if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, &overWrite) && (GetLastError() == ERROR_IO_PENDING))
         {
             if (WaitForSingleObject(overWrite.hEvent, 1000))
             {
                 dwWritten = 0;
+                check = true;
             }
             else
             {
                 GetOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
                 overWrite.Offset += dwWritten;
             }
-            //            printf("WriteFile error\n");
         }
     } while (check);
+}
+
+StpCoord stepper::get_current_coord() {
+    char cmd[4];
+    strcpy(cmd, "?\n");
+    write_cmd(cmd);
+    char output[1024] = { 0 };
+    strcpy(output, read());
+    std::string output_s = output;
+    std::string tmp;
+    for (int i = output_s.find("WPos") + 5; i < 1024; i++) { // TODO: лютого кала наделал
+        for (int x_count = 0; x_count < 6; x_count++) {
+            tmp += output_s[i];
+        }
+        current_coord.x = stof(tmp);
+        tmp.clear();
+        for (int y_count = 0; y_count < 6; y_count++) {
+            tmp += output_s[i];
+        }
+        current_coord.y = stof(tmp);
+        tmp.clear();
+        for (int z_count = 0; z_count < 6; z_count++) {
+            tmp += output_s[i];
+        }
+        current_coord.z = stof(tmp);
+        tmp.clear();
+    }
+}
+
+void stepper::close() {
+    if (overRead.hEvent != NULL)
+        CloseHandle(overRead.hEvent);
+    if (overWrite.hEvent != NULL)
+        CloseHandle(overWrite.hEvent);
+    if (!CloseHandle(hSerial))
+        throw runtime_error("CloseHandle error\n");
+    return;
+}
+
+stepper::~stepper() {
 }

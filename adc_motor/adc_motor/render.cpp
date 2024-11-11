@@ -223,12 +223,12 @@ void render::connect() {
     }
     ImGui::SameLine();
     if (!isMotorConnected) {
-        if (ImGui::Button("Connect Malysh", ImVec2(150.0f, 20.0f))) {
+        if (ImGui::Button("Connect Motor", ImVec2(150.0f, 20.0f))) {
             isMotorConnected = true;
         }
     }
     else {
-        if (ImGui::Button("Disconnect Malysh", ImVec2(150.0f, 20.0f))) {
+        if (ImGui::Button("Disconnect Motor", ImVec2(150.0f, 20.0f))) {
             isMotorConnected = false;
             disconnectMotor = true;
         }

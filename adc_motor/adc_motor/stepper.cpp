@@ -125,29 +125,34 @@ void stepper::write_cmd(char* outputData) {
 
 StpCoord stepper::get_current_coord() {
     char cmd[4];
-    strcpy(cmd, "?\n");
+    strcpy_s(cmd, "?\n");
     write_cmd(cmd);
     char output[1024] = { 0 };
-    strcpy(output, read());
+    strcpy_s(output, read());
     std::string output_s = output;
     std::string tmp;
-    for (int i = output_s.find("WPos") + 5; i < 1024; i++) { // TODO: лютого кала наделал
-        for (int x_count = 0; x_count < 6; x_count++) {
-            tmp += output_s[i];
-        }
-        current_coord.x = stof(tmp);
-        tmp.clear();
-        for (int y_count = 0; y_count < 6; y_count++) {
-            tmp += output_s[i];
-        }
-        current_coord.y = stof(tmp);
-        tmp.clear();
-        for (int z_count = 0; z_count < 6; z_count++) {
-            tmp += output_s[i];
-        }
-        current_coord.z = stof(tmp);
-        tmp.clear();
+    for (int i = output_s.find("WPos") + 5; i < output_s.find("WPos") + 10; i++) {
+        tmp += output_s[i];
     }
+    current_coord.x = stof(tmp);
+    tmp.clear();
+    output_s.erase(0, output_s.find("WPos") + 5);
+
+    for (int i = output_s.find(",") + 1; i < output_s.find(",") + 5; i++) { 
+        tmp += output_s[i];
+    }
+    current_coord.y = stof(tmp);
+    tmp.clear();
+    output_s.erase(0, output_s.find(",") + 5);
+
+    for (int i = output_s.find(",") + 1; i < output_s.find(",") + 5; i++) { 
+        tmp += output_s[i];
+    }
+    current_coord.z = stof(tmp);
+    tmp.clear();
+    output_s.erase(0, output_s.find(",") + 5);
+
+    return current_coord;
 }
 
 void stepper::close() {

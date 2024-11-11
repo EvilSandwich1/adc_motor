@@ -128,6 +128,8 @@ int main() {
 	static bool p_open_ovr = false;
 	static bool p_open_style = false;
 
+	StpCoord current_coord = { 0 };
+
 	// Main loop
 	bool done = false;
 	while (!done)
@@ -253,6 +255,11 @@ int main() {
 					strcpy(output, motor.read());
 				}
 				ren.stepper_output(output);
+				if(ImGui::Button("Update"))
+					current_coord = motor.get_current_coord();
+				ImGui::Text("x = %f", current_coord.x); ImGui::SameLine();
+				ImGui::Text("y = %f", current_coord.y); ImGui::SameLine();
+				ImGui::Text("z = %f", current_coord.z);
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Fourier")) {

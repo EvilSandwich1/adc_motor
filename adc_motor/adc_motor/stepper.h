@@ -22,6 +22,7 @@ public:
 	char* read();
 	void write_cmd(char* outputData);
 	StpCoord get_current_coord();
+	bool move(float val, std::string coord);
 	void close();
 };
 

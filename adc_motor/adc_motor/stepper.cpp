@@ -46,7 +46,7 @@ bool stepper::initialize() {
         ComTimeOut.ReadTotalTimeoutConstant = 0;
         ComTimeOut.ReadTotalTimeoutMultiplier = 0;
         ComTimeOut.WriteTotalTimeoutMultiplier = 0;
-        ComTimeOut.WriteTotalTimeoutConstant = 5000;
+        ComTimeOut.WriteTotalTimeoutConstant = 0;
         SetCommTimeouts(hSerial, &ComTimeOut);
 
         if (hSerial == INVALID_HANDLE_VALUE)
@@ -91,36 +91,21 @@ bool stepper::initialize() {
 }
 
 char* stepper::read(){
-    bool check = true;
     memset(inputData, 0, 1024);
-    do {
-        if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, &overRead) && GetLastError() == ERROR_IO_PENDING)
-        {
-            WaitForSingleObject(overRead.hEvent, 2000);
-        }
-        else check = false;
-    } while (check);
+    if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, &overRead) && GetLastError() == ERROR_IO_PENDING)
+    {
+        WaitForSingleObject(overRead.hEvent, INFINITE);
+        GetOverlappedResult(hSerial, &overRead, &dwRead, FALSE);
+    }
     return inputData;
 }
 
 void stepper::write_cmd(char* outputData) { 
-    bool check = true;
-    do {
-    check = false;
-        if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, &overWrite) && (GetLastError() == ERROR_IO_PENDING))
-        {
-            if (WaitForSingleObject(overWrite.hEvent, 1000))
-            {
-                dwWritten = 0;
-                check = true;
-            }
-            else
-            {
-                GetOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
-                overWrite.Offset += dwWritten;
-            }
-        }
-    } while (check);
+    if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, &overWrite) && (GetLastError() == ERROR_IO_PENDING))
+    {
+        WaitForSingleObject(overWrite.hEvent, INFINITE);
+        GetOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
+    }
 }
 
 StpCoord stepper::get_current_coord() {
@@ -131,6 +116,8 @@ StpCoord stepper::get_current_coord() {
     strcpy_s(output, read());
     std::string output_s = output;
     std::string tmp;
+    if (output_s.empty() || !output_s.contains("WPos") || output_s[0] != '<')
+        return current_coord;
     for (int i = output_s.find("WPos") + 5; i < output_s.find("WPos") + 10; i++) {
         tmp += output_s[i];
     }
@@ -153,6 +140,33 @@ StpCoord stepper::get_current_coord() {
     output_s.erase(0, output_s.find(",") + 5);
 
     return current_coord;
+}
+
+bool stepper::move(float val, std::string coord) {
+    //StpCoord current = get_current_coord();
+    char cmd[1024];
+
+    if (coord == "x") {
+        sprintf_s(cmd, "G0 X%f\n", val);
+        write_cmd(cmd);
+        return true;
+    }
+
+    if (coord == "y") {
+        sprintf_s(cmd, "G0 Y%f\n", val);
+        write_cmd(cmd);
+        return true;
+    }
+
+    if (coord == "z") {
+        sprintf_s(cmd, "G0 Z%f\n", val);
+        write_cmd(cmd);
+        return true;
+    }
+
+    else {
+        return false;
+    }
 }
 
 void stepper::close() {

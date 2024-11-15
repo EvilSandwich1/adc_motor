@@ -115,6 +115,47 @@ bool ShowColormapSelector(const char* label) {
 	return set;
 }
 
+StpCoord MotorControlPanel(StpCoord current_coord) {
+	memset(cmd, 0, 1024);
+	strcpy(cmd, ren.stepper_input());
+	strcat_s(cmd, "\n");
+	assert(sizeof(cmd) == 1024);
+	if (ren.sendCmd) {
+		motor.write_cmd(cmd);
+		memset(output, 0, 1024 * sizeof(char));
+		Sleep(100);
+		strcpy(output, motor.read());
+		Sleep(100);
+	}
+	ren.stepper_output(output);
+	current_coord = motor.get_current_coord();
+	ImGui::Text("x = %f", current_coord.x); ImGui::SameLine();
+	ImGui::Text("y = %f", current_coord.y); ImGui::SameLine();
+	ImGui::Text("z = %f", current_coord.z);
+	ImGui::Text("X:");
+	if (ImGui::Button("Left X")) {
+		motor.move(-1.0f, "x");
+	} ImGui::SameLine();
+	if (ImGui::Button("Right X")) {
+		motor.move(1.0f, "x");
+	}
+	ImGui::Text("Y:");
+	if (ImGui::Button("Left Y")) {
+		motor.move(-1.0f, "y");
+	} ImGui::SameLine();
+	if (ImGui::Button("Right Y")) {
+		motor.move(1.0f, "y");
+	}
+	ImGui::Text("Z:");
+	if (ImGui::Button("Left Z")) {
+		motor.move(-1.0f, "z");
+	} ImGui::SameLine();
+	if (ImGui::Button("Right Z")) {
+		motor.move(1.0f, "z");
+	}
+	return current_coord;
+}
+
 int main() {
 	static float f = 0.0f;
 	std::vector<float>& buffer_long = adc.buffer_long;
@@ -243,23 +284,7 @@ int main() {
 				}
 				ren.oscilloscope(tmp_buffer, samples);
 				ren.connect();
-				//char* cmd = ren.stepper_input();
-				memset(cmd, 0, 1024);
-				strcpy(cmd, ren.stepper_input());
-				strcat_s(cmd, "\n");
-				assert(sizeof(cmd) == 1024);
-				if (ren.sendCmd) {
-					motor.write_cmd(cmd);
-					memset(output, 0, 1024 * sizeof(char));
-					Sleep(100);
-					strcpy(output, motor.read());
-				}
-				ren.stepper_output(output);
-				if(ImGui::Button("Update"))
-					current_coord = motor.get_current_coord();
-				ImGui::Text("x = %f", current_coord.x); ImGui::SameLine();
-				ImGui::Text("y = %f", current_coord.y); ImGui::SameLine();
-				ImGui::Text("z = %f", current_coord.z);
+				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Fourier")) {
@@ -273,21 +298,13 @@ int main() {
 				}
 				ren.fourier(tmp_fourier, npoints);
 				ren.connect();
-				char* cmd = ren.stepper_input();
-				if (ren.sendCmd) {
-					motor.write_cmd(cmd);
-					ren.stepper_output(motor.read());
-				}
+				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Scrolling")) {
 				ren.scrolling(avg);
 				ren.connect();
-				char* cmd = ren.stepper_input();
-				if (ren.sendCmd) {
-					motor.write_cmd(cmd);
-					ren.stepper_output(motor.read());
-				}
+				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();

@@ -161,41 +161,8 @@ LRESULT CALLBACK render::wnd_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
         }
         return 0;
     case WM_DESTROY:
-        //close();
         PostQuitMessage(EXIT_SUCCESS);
         return 0;
-    /*case WM_COMMAND:
-    {
-        switch (static_cast<render::CTL_ID>(LOWORD(wParam)))
-        {
-        case render::CTL_ID::PLACEHOLDER:
-        {
-            wstringstream wss;
-            //wss << frame();
-            SetWindowText(this->m_hWndEdit, wss.str().c_str());
-        }
-        return 0;
-        }
-    }
-    return 0;
-   // case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-        EndPaint(hWnd, &ps);
-    }
-   // return 0;
-    case WM_TIMER:
-        switch (static_cast<render::TIMER_ID>(wParam)) {
-        case render::TIMER_ID::IDT_TIMER:
-        {
-            KillTimer(this->m_hWnd, static_cast<UINT_PTR>(render::TIMER_ID::IDT_TIMER));
-            //display();
-        }
-        return 0;
-        }
-        return 0;*/
     default:
         return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 
@@ -222,14 +189,15 @@ void render::connect() {
         }
     }
     ImGui::SameLine();
-    if (!isMotorConnected) {
+    if (!motorConnectInProgress) {
         if (ImGui::Button("Connect Motor", ImVec2(150.0f, 20.0f))) {
-            isMotorConnected = true;
+            motorConnectInProgress = true;
+            connectStartUp = true;
         }
     }
     else {
         if (ImGui::Button("Disconnect Motor", ImVec2(150.0f, 20.0f))) {
-            isMotorConnected = false;
+            motorConnectInProgress = false;
             disconnectMotor = true;
         }
     }

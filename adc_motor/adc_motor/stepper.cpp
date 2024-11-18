@@ -142,23 +142,55 @@ StpCoord stepper::get_current_coord() {
     return current_coord;
 }
 
+bool stepper::home() {
+    char cmd[1024];
+    strcpy_s(cmd, "$H\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+    read();
+
+    strcpy_s(cmd, "$H Z\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+    read();
+
+    strcpy_s(cmd, "G91\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+    read();
+
+    return true;
+}
+
 bool stepper::move(float val, std::string coord) {
     //StpCoord current = get_current_coord();
     char cmd[1024];
 
     if (coord == "x") {
+        if (current_coord.x + val >= 0.0f) {
+            return false;
+        }
         sprintf_s(cmd, "G0 X%f\n", val);
         write_cmd(cmd);
         return true;
     }
 
     if (coord == "y") {
+        if (current_coord.y + val >= 0.0f) {
+            return false;
+        }
         sprintf_s(cmd, "G0 Y%f\n", val);
         write_cmd(cmd);
         return true;
     }
 
     if (coord == "z") {
+        if (current_coord.z + val >= 1.0f) {
+            return false;
+        }
         sprintf_s(cmd, "G0 Z%f\n", val);
         write_cmd(cmd);
         return true;

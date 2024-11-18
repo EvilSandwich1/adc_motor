@@ -85,7 +85,8 @@ public:
 	int my_image_width;
 	int my_image_height;
 	bool isConnected;
-	bool isMotorConnected;
+	bool motorConnectInProgress;
+	bool connectStartUp;
 	bool disconnect;
 	bool disconnectMotor;
 	bool sendCmd;

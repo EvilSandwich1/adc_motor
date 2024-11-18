@@ -36,6 +36,7 @@ static bool connectDone = false;
 static bool connectDoneMotor = false;
 char output[1024] = { 0 };
 char cmd[1024] = { 0 };
+std::thread motorThread;
 
 static void HelpMarker(const char* desc)
 {
@@ -156,6 +157,19 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	return current_coord;
 }
 
+bool stepperThread(stepper &motor, std::shared_ptr<std::promise<bool>> promise) {
+	if (motor.initialize()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+		motor.home();
+		promise->set_value(true);
+		return true;
+	}
+	else {
+		promise->set_value(false);
+		return false;
+	}
+}
+
 int main() {
 	static float f = 0.0f;
 	std::vector<float>& buffer_long = adc.buffer_long;
@@ -164,6 +178,8 @@ int main() {
 	static int npoints = 1024;
 	static int samples = 512;
 	setlocale(LC_ALL, "en_us.utf8");
+
+	std::future<bool> future;
 
 	static bool p_open = false;
 	static bool p_open_ovr = false;
@@ -204,12 +220,31 @@ int main() {
 			connectDone = false;
 		}
 
-		if (ren.isMotorConnected && !connectDoneMotor) {
-			if (motor.initialize())
+		if (ren.motorConnectInProgress && !connectDoneMotor && ren.connectStartUp) {
+			auto promise = std::make_shared<std::promise<bool>>();
+			future = promise->get_future();
+			motorThread = std::thread(stepperThread, std::ref(motor), std::move(promise));
+			ren.connectStartUp = false;
+			/*if (motor.initialize()) {
+				Sleep(1500);
+				motor.home();
 				connectDoneMotor = true;
+			}
 			else {
 				ren.isMotorConnected = false;
 				connectDoneMotor = false;
+			}*/
+		}
+		if (ren.motorConnectInProgress && !connectDoneMotor) {
+			if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+				motorThread.join();
+				if (future.get()) {
+					connectDoneMotor = true;
+				}
+				else {
+					ren.motorConnectInProgress = false;
+					connectDoneMotor = false;
+				}
 			}
 		}
 		if (ren.disconnectMotor) {

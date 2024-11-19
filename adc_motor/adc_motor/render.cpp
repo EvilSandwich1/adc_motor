@@ -309,11 +309,11 @@ void render::fourier(std::vector<float>& data, int npoints) {
     for (int i = 0; i < data.size(); i++) {
         if (data[i] < 0) data[i] *= -1;
     }
-    for (int i = 0; i < npoints/2-1; i++) {
-        //data[i] = sqrtf(2 * powf(data[2*i] / npoints, 2) + powf(data[2*i+1] / npoints, 2));
-        //data[i] = (((2*data[2*i] + data[2*i+1]) / npoints)/sqrtf(2));
-        //data[i] = ((data[i*2] + data[i*2+1])/npoints)/sqrtf(2);
-    }
+    /*for (int i = 0; i < npoints / 2 - 1; i++) {
+        data[i] = sqrtf(2 * powf(data[2*i] / npoints, 2) + powf(data[2*i+1] / npoints, 2));
+        data[i] = (((2*data[2*i] + data[2*i+1]) / npoints)/sqrtf(2));
+        data[i] = ((data[i*2] + data[i*2+1])/npoints)/sqrtf(2);
+    }*/
 
     for (int i = 0; i < (sizeof(x_data) / sizeof(float)); i++)
         x_data[i] = i*1024/npoints;

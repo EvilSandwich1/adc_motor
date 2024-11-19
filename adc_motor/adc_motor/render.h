@@ -47,7 +47,7 @@ class render
 		int MaxSize;
 		int Offset;
 		ImVector<ImVec2> Data;
-		ScrollingBuffer(int max_size = 2000) {
+		ScrollingBuffer(int max_size = 50000) {
 			MaxSize = max_size;
 			Offset = 0;
 			Data.reserve(MaxSize);

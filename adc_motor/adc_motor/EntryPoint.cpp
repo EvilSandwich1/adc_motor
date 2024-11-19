@@ -36,6 +36,7 @@ static bool connectDone = false;
 static bool connectDoneMotor = false;
 char output[1024] = { 0 };
 char cmd[1024] = { 0 };
+AlgCoord algorithm_coord = { 0 };
 std::thread motorThread;
 
 static void HelpMarker(const char* desc)
@@ -116,6 +117,10 @@ bool ShowColormapSelector(const char* label) {
 	return set;
 }
 
+void algoThread(stepper &motor, AlgCoord &coord) {
+	motor.algorithm(coord);
+}
+
 StpCoord MotorControlPanel(StpCoord current_coord) {
 	memset(cmd, 0, 1024);
 	strcpy(cmd, ren.stepper_input());
@@ -133,6 +138,8 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::Text("x = %f", current_coord.x); ImGui::SameLine();
 	ImGui::Text("y = %f", current_coord.y); ImGui::SameLine();
 	ImGui::Text("z = %f", current_coord.z);
+	//группа движений
+	ImGui::BeginGroup();
 	ImGui::Text("X:");
 	if (ImGui::Button("Left X")) {
 		motor.move(-1.0f, "x");
@@ -154,6 +161,47 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	if (ImGui::Button("Right Z")) {
 		motor.move(1.0f, "z");
 	}
+	ImGui::EndGroup();
+
+	ImGui::SameLine();
+	//группа задачи координат
+	ImGui::BeginGroup();
+
+	ImGui::Text("");
+	ImGui::PushItemWidth(50);
+
+	ImGui::InputFloat("Begin X", &algorithm_coord.begin_x);
+	ImGui::SameLine();
+	ImGui::InputFloat("Step X", &algorithm_coord.step_x);
+	ImGui::SameLine();
+	ImGui::InputFloat("End X", &algorithm_coord.end_x);
+
+	ImGui::InputFloat("Begin Y", &algorithm_coord.begin_y);
+	ImGui::SameLine();
+	ImGui::InputFloat("Step Y", &algorithm_coord.step_y);
+	ImGui::SameLine();
+	ImGui::InputFloat("End Y", &algorithm_coord.end_y);
+
+	ImGui::InputFloat("Begin Z", &algorithm_coord.begin_z);
+	ImGui::SameLine();
+	ImGui::InputFloat("Step Z", &algorithm_coord.step_z);
+	ImGui::SameLine();
+	ImGui::InputFloat("End Z", &algorithm_coord.end_z);
+
+	ImGui::PopItemWidth();
+	if (ImGui::Button("Start measurement")) {
+		if (algorithm_coord.begin_x > algorithm_coord.end_x)
+			return current_coord;
+		if (algorithm_coord.begin_y > algorithm_coord.end_y)
+			return current_coord;
+		if (algorithm_coord.begin_z > algorithm_coord.end_z)
+			return current_coord;
+
+		std::thread motorAlgorithm(algoThread, std::ref(motor), std::ref(current_coord));
+	}
+
+	ImGui::EndGroup();
+
 	return current_coord;
 }
 
@@ -186,6 +234,7 @@ int main() {
 	static bool p_open_style = false;
 
 	StpCoord current_coord = { 0 };
+
 
 	// Main loop
 	bool done = false;
@@ -307,22 +356,7 @@ int main() {
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 		if (ImGui::BeginTabBar("Plots/plots"), tab_bar_flags) {
-			if (ImGui::BeginTabItem("Oscilloscope")) {
-				if (ren.isConnected) {
-					if (adc.ready_swap) {
-						tmp_buffer = buffer_long;
-					}
-				}
-				if (tmp_buffer.size() <= 3) {
-					tmp_buffer.resize(32);
-					memset(&tmp_buffer[0], 0, 32 * sizeof tmp_buffer[0]);
-				}
-				ren.oscilloscope(tmp_buffer, samples);
-				ren.connect();
-				current_coord = MotorControlPanel(current_coord);
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Fourier")) {
+			/*if (ImGui::BeginTabItem("Fourier")) {
 				if (ren.isConnected) {
 					adc.pffft(npoints, ren.current_window);
 					tmp_fourier = adc.pffft_buffer;
@@ -335,9 +369,24 @@ int main() {
 				ren.connect();
 				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
-			}
+			}*/
 			if (ImGui::BeginTabItem("Scrolling")) {
 				ren.scrolling(avg);
+				ren.connect();
+				current_coord = MotorControlPanel(current_coord);
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Oscilloscope")) {
+				if (ren.isConnected) {
+					if (adc.ready_swap) {
+						tmp_buffer = buffer_long;
+					}
+				}
+				if (tmp_buffer.size() <= 3) {
+					tmp_buffer.resize(32);
+					memset(&tmp_buffer[0], 0, 32 * sizeof tmp_buffer[0]);
+				}
+				ren.oscilloscope(tmp_buffer, samples);
 				ren.connect();
 				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();

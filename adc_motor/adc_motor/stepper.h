@@ -16,6 +16,19 @@ public:
 	float z;
 };
 
+class AlgCoord {
+public:
+	float begin_x;
+	float step_x;
+	float end_x;
+	float begin_y;
+	float step_y;
+	float end_y;
+	float begin_z;
+	float step_z;
+	float end_z;
+};
+
 class stepper {
 public:
 	explicit stepper();
@@ -26,6 +39,7 @@ public:
 	StpCoord get_current_coord();
 	bool home();
 	bool move(float val, std::string coord);
+	bool algorithm(AlgCoord coord);
 	void close();
 };
 

@@ -51,7 +51,6 @@ bool stepper::initialize() {
 
         if (hSerial == INVALID_HANDLE_VALUE)
         {
-            //  Handle the error.
             throw runtime_error("CreateFile failed with error %d.\n");
             return false;
         }
@@ -166,7 +165,6 @@ bool stepper::home() {
 }
 
 bool stepper::move(float val, std::string coord) {
-    //StpCoord current = get_current_coord();
     char cmd[1024];
 
     if (coord == "x") {
@@ -206,10 +204,47 @@ void stepper::close() {
         CloseHandle(overRead.hEvent);
     if (overWrite.hEvent != NULL)
         CloseHandle(overWrite.hEvent);
-    if (!CloseHandle(hSerial))
-        throw runtime_error("CloseHandle error\n");
+    if (hSerial != 0) {
+        if (!CloseHandle(hSerial))
+            throw runtime_error("CloseHandle error\n");
+    }
     return;
 }
 
+bool stepper::algorithm(AlgCoord coord) {
+
+    char cmd[32];
+    strcpy_s(cmd, "G90\n");
+    write_cmd(cmd);
+
+    for (int i = 0; i < ((coord.end_x - coord.begin_x) / coord.step_x); i++) {
+        for (int j = 0; j < ((coord.end_y - coord.begin_y) / coord.step_y); j++) {
+            for (int k = 0; k < ((coord.end_z - coord.begin_z) / coord.step_z); k++) {
+                float val_z = coord.begin_z + coord.step_z * k;
+                move(val_z, "z");
+                while (true) {
+                    if (current_coord.x == val_z)
+                        break;
+                }
+            }
+            float val_y = coord.begin_y + coord.step_y * j;
+            move(val_y, "y");
+            while (true) {
+                if (current_coord.y == val_y)
+                    break;
+            }
+        }
+        float val_x = coord.begin_x + coord.step_x * i;
+        move(val_x, "x");
+        while (true) {
+            if (current_coord.y == val_x)
+                break;
+        }
+    }
+    
+    return true;
+}
+
 stepper::~stepper() {
+    close();
 }

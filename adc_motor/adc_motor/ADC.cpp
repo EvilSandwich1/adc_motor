@@ -30,7 +30,6 @@ float datafloat;
 
 DWORD tm = 10000000;
 
-ofstream file_data;
 
 typedef IDaqLDevice* (*CREATEFUNCPTR)(ULONG Slot);
 
@@ -87,7 +86,6 @@ ULONG WINAPI ServiceThread(PVOID /*Context*/)
 
 ADC::ADC()
 {
-    file_data.open("adc_data.txt");
     try 
     {
         //create_controls();
@@ -315,7 +313,6 @@ void ADC::pffft(int npoints, int window_id) {
 
      status = pI->Release();
      M_OK("Release IDaqLDevice", endl);
-     file_data.close();
  }
 
 vector<float>& ADC::data_proc() {
@@ -369,6 +366,5 @@ vector<float>& ADC::data_proc() {
      float avg = std::reduce(dataStream.begin(), dataStream.end()) / dataStream.size();
      return avg;
  }
-
 
 ADC::~ADC() {}

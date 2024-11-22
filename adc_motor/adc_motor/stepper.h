@@ -3,10 +3,12 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>;
+#include <fstream>
 #include <conio.h>
 #include <string>
 #include <thread>
 #include <future>
+#include "ADC.h"
 #define ASCII
 
 class StpCoord {
@@ -39,7 +41,8 @@ public:
 	StpCoord get_current_coord();
 	bool home();
 	bool move(float val, std::string coord);
-	bool algorithm(AlgCoord coord);
+	bool algorithm(AlgCoord coord, ADC adc);
+	void test(AlgCoord coord);
 	void close();
 };
 

@@ -38,6 +38,9 @@ char output[1024] = { 0 };
 char cmd[1024] = { 0 };
 AlgCoord algorithm_coord = { 0 };
 std::thread motorThread;
+std::thread algorithmThread;
+ImGuiContext& g = *GImGui;
+std::future<bool> futureAl;
 
 static void HelpMarker(const char* desc)
 {
@@ -117,8 +120,12 @@ bool ShowColormapSelector(const char* label) {
 	return set;
 }
 
-void algoThread(stepper &motor, AlgCoord &coord) {
-	motor.algorithm(coord);
+bool algoThread(AlgCoord &coord, std::shared_ptr<std::promise<bool>> promise) {
+	//if (g.GroupStack.Size > 0)
+	//	ImGui::EndGroup();
+	bool res = motor.algorithm(coord, adc);
+	promise->set_value(res);
+	return res;
 }
 
 StpCoord MotorControlPanel(StpCoord current_coord) {
@@ -189,19 +196,27 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::InputFloat("End Z", &algorithm_coord.end_z);
 
 	ImGui::PopItemWidth();
-	if (ImGui::Button("Start measurement")) {
-		if (algorithm_coord.begin_x > algorithm_coord.end_x)
-			return current_coord;
-		if (algorithm_coord.begin_y > algorithm_coord.end_y)
-			return current_coord;
-		if (algorithm_coord.begin_z > algorithm_coord.end_z)
-			return current_coord;
-
-		std::thread motorAlgorithm(algoThread, std::ref(motor), std::ref(current_coord));
-	}
-
 	ImGui::EndGroup();
 
+	if (ImGui::Button("Start measurement")) {
+		if (algorithm_coord.begin_x < algorithm_coord.end_x)
+			return current_coord;
+		if (algorithm_coord.begin_y < algorithm_coord.end_y)
+			return current_coord;
+		if (algorithm_coord.begin_z < algorithm_coord.end_z)
+			return current_coord;
+
+		//motor.test(algorithm_coord);
+		auto promise = std::make_shared<std::promise<bool>>();
+		
+		futureAl = promise->get_future();
+		algorithmThread = std::thread(algoThread, std::ref(algorithm_coord), std::move(promise));
+	}
+	if (algorithmThread.joinable()) {
+		if (futureAl.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+			algorithmThread.join();
+		}
+	}
 	return current_coord;
 }
 

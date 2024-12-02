@@ -322,7 +322,7 @@ vector<float>& ADC::data_proc() {
      {
          ULONG s;
          InterlockedExchange(&s, *sync);
-         //cout << ".......... " << setw(8) << s << "\r";
+         cout << ".......... " << setw(8) << s << "\r";
          if (WAIT_OBJECT_0 == WaitForSingleObject(hThread, 0)) { complete = 1; break; }
          Sleep(10);
      }

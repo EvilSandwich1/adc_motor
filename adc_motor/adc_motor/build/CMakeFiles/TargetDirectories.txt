@@ -1,0 +1,4 @@
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/CMakeFiles/adc_motor.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/CMakeFiles/PACKAGE.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/CMakeFiles/INSTALL.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/CMakeFiles/ALL_BUILD.dir

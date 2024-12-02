@@ -1,0 +1,7 @@
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/adc_motor.exe
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/dll/lcomp.dll
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/dll/lcomp64.dll
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/res/Roboto-Medium.ttf
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/res/temp_coef.txt
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/res/tydex_logo.ico
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/res/tydex_logo.jpg

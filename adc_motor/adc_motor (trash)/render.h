@@ -87,8 +87,6 @@ public:
 	bool isConnected;
 	bool motorConnectInProgress;
 	bool connectStartUp;
-	bool connectStartUpADC;
-	bool adcConnectInProgress;
 	bool disconnect;
 	bool disconnectMotor;
 	bool sendCmd;

@@ -180,14 +180,11 @@ void render::connect() {
     if (!isConnected) {
         if (ImGui::Button("Connect ADC", ImVec2(150.0f, 20.0f))) {
             isConnected = true;
-            adcConnectInProgress = true;
-            connectStartUpADC = true;
         }
     }
     else {
         if (ImGui::Button("Disconnect ADC", ImVec2(150.0f, 20.0f))) {
             isConnected = false;
-            adcConnectInProgress = false;
             disconnect = true;
         }
     }

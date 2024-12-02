@@ -1,50 +1,31 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{3FF3777B-02B9-31E8-B585-0D0C912D18F9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01781D16-6DB1-3446-9B19-8B486CA9869D} = {01781D16-6DB1-3446-9B19-8B486CA9869D}
-		{BD019335-CFEE-3AD3-AD31-00132D7465A8} = {BD019335-CFEE-3AD3-AD31-00132D7465A8}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "INSTALL", "INSTALL.vcxproj", "{E4896372-D34A-3F39-9402-F7FFB65CA844}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3FF3777B-02B9-31E8-B585-0D0C912D18F9} = {3FF3777B-02B9-31E8-B585-0D0C912D18F9}
-		{01781D16-6DB1-3446-9B19-8B486CA9869D} = {01781D16-6DB1-3446-9B19-8B486CA9869D}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PACKAGE", "PACKAGE.vcxproj", "{E1CB56D3-4C78-3642-9E77-32F8CF4B10F3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3FF3777B-02B9-31E8-B585-0D0C912D18F9} = {3FF3777B-02B9-31E8-B585-0D0C912D18F9}
-		{01781D16-6DB1-3446-9B19-8B486CA9869D} = {01781D16-6DB1-3446-9B19-8B486CA9869D}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZERO_CHECK", "ZERO_CHECK.vcxproj", "{01781D16-6DB1-3446-9B19-8B486CA9869D}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adc_motor", "adc_motor.vcxproj", "{BD019335-CFEE-3AD3-AD31-00132D7465A8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01781D16-6DB1-3446-9B19-8B486CA9869D} = {01781D16-6DB1-3446-9B19-8B486CA9869D}
-	EndProjectSection
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adc_motor", "adc_motor.vcxproj", "{031EA913-0FF1-410C-B616-5EE4FD856013}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Release|Win32 = Release|Win32
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3FF3777B-02B9-31E8-B585-0D0C912D18F9}.Release|Win32.ActiveCfg = Release|Win32
-		{3FF3777B-02B9-31E8-B585-0D0C912D18F9}.Release|Win32.Build.0 = Release|Win32
-		{E4896372-D34A-3F39-9402-F7FFB65CA844}.Release|Win32.ActiveCfg = Release|Win32
-		{E1CB56D3-4C78-3642-9E77-32F8CF4B10F3}.Release|Win32.ActiveCfg = Release|Win32
-		{01781D16-6DB1-3446-9B19-8B486CA9869D}.Release|Win32.ActiveCfg = Release|Win32
-		{01781D16-6DB1-3446-9B19-8B486CA9869D}.Release|Win32.Build.0 = Release|Win32
-		{BD019335-CFEE-3AD3-AD31-00132D7465A8}.Release|Win32.ActiveCfg = Release|Win32
-		{BD019335-CFEE-3AD3-AD31-00132D7465A8}.Release|Win32.Build.0 = Release|Win32
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Debug|x64.ActiveCfg = Debug|x64
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Debug|x64.Build.0 = Debug|x64
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Debug|x86.ActiveCfg = Debug|Win32
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Debug|x86.Build.0 = Debug|Win32
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Release|x64.ActiveCfg = Release|x64
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Release|x64.Build.0 = Release|x64
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Release|x86.ActiveCfg = Release|Win32
+		{031EA913-0FF1-410C-B616-5EE4FD856013}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {268C7C26-8872-35AC-8EBD-B8B158B07DCC}
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+		SolutionGuid = {A8E0D549-1E95-4F54-85D8-5892E651BE89}
 	EndGlobalSection
 EndGlobal

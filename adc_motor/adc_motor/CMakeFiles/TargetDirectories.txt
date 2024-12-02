@@ -1,0 +1,5 @@
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/CMakeFiles/adc_motor.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/CMakeFiles/PACKAGE.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/CMakeFiles/INSTALL.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/CMakeFiles/ALL_BUILD.dir
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/CMakeFiles/ZERO_CHECK.dir

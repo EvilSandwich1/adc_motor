@@ -215,7 +215,7 @@ void stepper::close() {
     return;
 }
 
-bool stepper::algorithm(AlgCoord coord, ADC adc) {
+bool stepper::algorithm(AlgCoord coord, ADC adc, int delay) {
 
     char cmd[32];
     char data_s[1024];
@@ -271,6 +271,7 @@ bool stepper::algorithm(AlgCoord coord, ADC adc) {
                     if (current_coord.z == val_z)
                         break;
                 }
+                Sleep(delay);
                 data = adc.data_avg(adc.data_proc());
                 sprintf_s(data_s, "X: %f, Y: %f, Z: %f, Data: %f\n", current_coord.x, current_coord.y, current_coord.z, data);
                 file_data << data_s;
@@ -280,6 +281,11 @@ bool stepper::algorithm(AlgCoord coord, ADC adc) {
         } while (j <= ((coord.end_y - coord.begin_y) / coord.step_y));
     } while (i <= ((coord.end_x - coord.begin_x) / coord.step_x));
     
+    strcpy_s(cmd, "G91\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+
     file_data.close();
     return true;
 }
@@ -307,5 +313,4 @@ void stepper::test(AlgCoord coord) {
         coord.step_z = 1;
 }
 stepper::~stepper() {
-    close();
 }

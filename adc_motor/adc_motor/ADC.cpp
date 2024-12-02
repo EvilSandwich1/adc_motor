@@ -125,10 +125,10 @@ string char_to_str(const char* test)
 
 bool ADC::init_e440()
 {
-#ifdef WIN64
-    CallCreateInstance(L"lcomp64.dll");
+#ifdef _WIN64
+    CallCreateInstance(L"./dll/lcomp64.dll");
 #else
-    CallCreateInstance(L"lcomp.dll");
+    CallCreateInstance(L"./dll/lcomp.dll");
 #endif
 
 #define M_FAIL(x,s) do { throw runtime_error(x);  } while(0)

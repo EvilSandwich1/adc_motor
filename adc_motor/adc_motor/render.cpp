@@ -373,6 +373,17 @@ void render::stepper_output(char* outputData) {
     ImGui::InputTextMultiline("##output", data, IM_ARRAYSIZE(data), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags);
 }
 
+void render::visualize() {
+    std::ifstream file_data;
+    std::string data;
+
+    file_data.open("input.txt");
+
+    while (std::getline(file_data, data)) {
+
+    }
+}
+
 void render::d3dctx() {
     render::FrameContext* frameCtx = WaitForNextFrameResources();
     UINT backBufferIdx = g_pSwapChain->GetCurrentBackBufferIndex();

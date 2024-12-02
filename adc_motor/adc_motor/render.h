@@ -105,6 +105,7 @@ public:
 	void fourier(std::vector<float>& data, int npoints);
 	char* stepper_input();
 	void stepper_output(char* outputData);
+	void visualize();
 	void create_controls();
 	bool CreateDeviceD3D(HWND hWnd);
 	void CleanupDeviceD3D();

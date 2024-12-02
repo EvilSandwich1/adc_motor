@@ -41,7 +41,7 @@ public:
 	StpCoord get_current_coord();
 	bool home();
 	bool move(float val, std::string coord);
-	bool algorithm(AlgCoord coord, ADC adc);
+	bool algorithm(AlgCoord coord, ADC adc, int delay);
 	void test(AlgCoord coord);
 	void close();
 };

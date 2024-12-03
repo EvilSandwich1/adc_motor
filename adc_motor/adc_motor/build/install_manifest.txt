@@ -1,4 +1,5 @@
 D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/adc_motor.exe
+D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/E440.bio
 D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/dll/lcomp.dll
 D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/dll/lcomp64.dll
 D:/рабочий стол/Курганский ИД/repository/adc_motor/adc_motor/adc_motor/build/_CPack_Packages/win32/NSIS/StepperApp/bin/res/Roboto-Medium.ttf

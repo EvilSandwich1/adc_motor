@@ -179,7 +179,6 @@ void render::demo() {
 void render::connect() {
     if (!isConnected) {
         if (ImGui::Button("Connect ADC", ImVec2(150.0f, 20.0f))) {
-            isConnected = true;
             adcConnectInProgress = true;
             connectStartUpADC = true;
         }

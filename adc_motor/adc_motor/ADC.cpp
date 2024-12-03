@@ -49,7 +49,6 @@ int k;
 IDaqLDevice* pI;
 int y;
 float dataBuffer[8192];
-bool ready_swap = false;
 
 int buffer_pointer;
 
@@ -92,6 +91,7 @@ ADC::ADC()
         //this->init_e440();
         //this->stream_setup();
         //this->frame();
+        ready_swap = false;
     }
     catch (const std::exception& e)
     {
@@ -125,50 +125,58 @@ string char_to_str(const char* test)
 
 bool ADC::init_e440()
 {
+    try {
 #ifdef _WIN64
-    CallCreateInstance(L"./dll/lcomp64.dll");
+        CallCreateInstance(L"./dll/lcomp64.dll");
 #else
-    CallCreateInstance(L"./dll/lcomp.dll");
+        CallCreateInstance(L"./dll/lcomp.dll");
 #endif
 
 #define M_FAIL(x,s) do { throw runtime_error(x);  } while(0)
 #define M_OK(x,e)   do {  } while(0)
 
-    LUnknown* pIUnknown = CreateInstance(0);
-    if (pIUnknown == NULL) { M_FAIL(char_to_str("CreateInstance"), nullptr); return false; }
+        LUnknown* pIUnknown = CreateInstance(0);
+        if (pIUnknown == NULL) { M_FAIL(char_to_str("CreateInstance"), nullptr); return false; }
 
-    HRESULT hr = pIUnknown->QueryInterface(IID_ILDEV, (void**)&pI);
-    if (!SUCCEEDED(hr)) { M_FAIL(char_to_str("QueryInterface"), nullptr); return false; }
+        HRESULT hr = pIUnknown->QueryInterface(IID_ILDEV, (void**)&pI);
+        if (!SUCCEEDED(hr)) { M_FAIL(char_to_str("QueryInterface"), nullptr); return false; }
 
-    status = pIUnknown->Release();
-    M_OK("Release IUnknown", endl);
+        status = pIUnknown->Release();
+        M_OK("Release IUnknown", endl);
 
-    HANDLE hVxd = pI->OpenLDevice(); // открываем устройство
-    if (hVxd == INVALID_HANDLE_VALUE) { M_FAIL(char_to_str("OpenLDevice"), hVxd); this->disconnect(); return false; }
-    else M_OK("OpenLDevice", endl);
+        HANDLE hVxd = pI->OpenLDevice(); // открываем устройство
+        if (hVxd == INVALID_HANDLE_VALUE) { M_FAIL(char_to_str("OpenLDevice"), hVxd); this->disconnect(); return false; }
+        else M_OK("OpenLDevice", endl);
 
-    status = pI->GetSlotParam(&sl);
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("GetSlotParam"), status); return false; }
-    else M_OK("GetSlotParam", endl);
+        status = pI->GetSlotParam(&sl);
+        if (status != L_SUCCESS) { M_FAIL(char_to_str("GetSlotParam"), status); return false; }
+        else M_OK("GetSlotParam", endl);
 
-    status = pI->LoadBios("e440"); // загружаем биос в модуль
-    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) { M_FAIL(char_to_str("LoadBios"), status); return false; }
-    else M_OK("LoadBios", endl);
+        status = pI->LoadBios("e440"); // загружаем биос в модуль
+        if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) { M_FAIL(char_to_str("LoadBios"), status); return false; }
+        else M_OK("LoadBios", endl);
 
-    status = pI->PlataTest(); // тестируем успешность загрузки и работоспособность биос
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("PlataTest"), status); return false; }
-    else M_OK("PlataTest", endl);
+        status = pI->PlataTest(); // тестируем успешность загрузки и работоспособность биос
+        if (status != L_SUCCESS) { M_FAIL(char_to_str("PlataTest"), status); return false; }
+        else M_OK("PlataTest", endl);
 
-    status = pI->ReadPlataDescr(&pd); // считываем данные о конфигурации платы/модул€. 
-    // ќЅя«ј“≈Ћ№Ќќ ƒ≈Ћј“№! (иначе расчеты параметров сбора данных невозможны тк нужна информаци€ о названии модул€ и частоте кварца )
-    if (status != L_SUCCESS) { M_FAIL(char_to_str("ReadPlataDescr"), status); return false; }
-    else M_OK("ReadPlataDescr", endl);
-    pp.s_Type = L_ASYNC_ADC_INP;
-    pp.Chn[0] = 0b00100000; // 0 канал дифф. подключение (в общем случае лог. номер канала)
-    status = pI->EnableCorrection();
-    pp.dRate = 400.0;
-    //display();
-    return true;
+        status = pI->ReadPlataDescr(&pd); // считываем данные о конфигурации платы/модул€. 
+        // ќЅя«ј“≈Ћ№Ќќ ƒ≈Ћј“№! (иначе расчеты параметров сбора данных невозможны тк нужна информаци€ о названии модул€ и частоте кварца )
+        if (status != L_SUCCESS) { M_FAIL(char_to_str("ReadPlataDescr"), status); return false; }
+        else M_OK("ReadPlataDescr", endl);
+        pp.s_Type = L_ASYNC_ADC_INP;
+        pp.Chn[0] = 0b00100000; // 0 канал дифф. подключение (в общем случае лог. номер канала)
+        status = pI->EnableCorrection();
+        pp.dRate = 400.0;
+        //display();
+        return true;
+    }
+    catch (const std::exception & e)
+    {
+        string excpt_data = e.what();
+        MessageBox(nullptr, wstring(begin(excpt_data), end(excpt_data)).c_str(), L"ќшибка", MB_ICONERROR | MB_OK);
+        ExitProcess(EXIT_FAILURE);
+    }
 }
 /*void ADC::display() {
     wstringstream wss;

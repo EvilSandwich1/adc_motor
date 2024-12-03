@@ -40,7 +40,7 @@ AlgCoord algorithm_coord = { 0 };
 int delay_g = 0;
 std::thread motorThread;
 std::thread algorithmThread;
-std::thread adcInitThread;
+std::jthread adcInitThread;
 ImGuiContext& g = *GImGui;
 std::future<bool> futureAl;
 std::future<bool> futureInit;
@@ -240,7 +240,7 @@ bool stepperThread(stepper &motor, std::shared_ptr<std::promise<bool>> promise) 
 }
 
 bool adcConnectThread(ADC& adc, std::shared_ptr<std::promise<bool>> promise) {
-	if (adc.init_e440() && adc.stream_setup()) {
+	if (adc.init_e440()) {
 		promise->set_value(true);
 		return true;
 	}
@@ -289,7 +289,8 @@ int main() {
 		if (ren.adcConnectInProgress && ren.connectStartUpADC && !connectDone) {
 			auto promise = std::make_shared<std::promise<bool>>();
 			futureInit = promise->get_future();
-			adcInitThread = std::thread(adcConnectThread, std::ref(adc), std::move(promise));
+			adcInitThread = std::jthread(adcConnectThread, std::ref(adc), std::move(promise));
+			ren.connectStartUpADC = false;
 			/*if (adc.init_e440() && adc.stream_setup()) {
 				connectDone = true;
 			}
@@ -297,6 +298,20 @@ int main() {
 				ren.isConnected = false;
 				connectDone = false;
 			}*/
+		}
+		if (ren.adcConnectInProgress && !connectDone) {
+			if (futureInit.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+				adcInitThread.join();
+				if (futureInit.get()) {
+					connectDone = true;
+					ren.isConnected = true;
+					adc.stream_setup();
+				}
+				else {
+					ren.adcConnectInProgress = false;
+					connectDone = false;
+				}
+			}
 		}
 		if (ren.disconnect) {
 			adc.disconnect();

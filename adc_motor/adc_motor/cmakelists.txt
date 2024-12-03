@@ -116,6 +116,7 @@ include(CPack)
 
 install(TARGETS adc_motor DESTINATION bin)
 install(TARGETS ${CMAKE_MSVC_RUNTIME_LIBRARY} DESTINATION bin)
+install(FILES E440.bio DESTINATION bin)
 install(DIRECTORY "dll" DESTINATION bin)
 install(DIRECTORY "res" DESTINATION bin)
 install(CODE [[file(GET_RUNTIME_DEPENDENCIES)]] DESTINATION bin)

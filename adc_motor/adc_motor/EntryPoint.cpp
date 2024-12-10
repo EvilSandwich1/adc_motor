@@ -136,6 +136,7 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	strcpy(cmd, ren.stepper_input());
 	strcat_s(cmd, "\n");
 	assert(sizeof(cmd) == 1024);
+
 	if (ren.sendCmd) {
 		motor.write_cmd(cmd);
 		memset(output, 0, 1024 * sizeof(char));
@@ -144,7 +145,10 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 		Sleep(100);
 	}
 	ren.stepper_output(output);
-	current_coord = motor.get_current_coord();
+
+	if (connectDoneMotor) {
+		current_coord = motor.get_current_coord();
+	}
 	ImGui::Text("x = %f", current_coord.x); ImGui::SameLine();
 	ImGui::Text("y = %f", current_coord.y); ImGui::SameLine();
 	ImGui::Text("z = %f", current_coord.z);

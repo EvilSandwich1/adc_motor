@@ -370,7 +370,7 @@ char* render::stepper_input() {
 
 void render::stepper_output(char* outputData) {
     static ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly;
-    char data[1024] = { 0 };
+    char data[1024] = "";
     strcat_s(data, outputData);
     ImGui::InputTextMultiline("##output", data, IM_ARRAYSIZE(data), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags);
 }

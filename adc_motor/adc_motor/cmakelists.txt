@@ -1,6 +1,6 @@
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.22)
-set(CMAKE_GENERATOR_PLATFORM Win32)
+set(CMAKE_GENERATOR_PLATFORM x64)
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "" FORCE)
 set(CMAKE_SYSTEM_VERSION 10.0.22621.0)
@@ -43,7 +43,7 @@ set(HEADERS
 )
 
 # Add executable target
-add_executable(adc_motor WIN32 ${SOURCES} ${HEADERS})
+add_executable(adc_motor x64 ${SOURCES} ${HEADERS})
 
 # Include directories
 target_include_directories(adc_motor PRIVATE "D:/Windows Kits/10/Lib/10.0.19041.0/um/x86")
@@ -84,7 +84,7 @@ set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
 #")
 
 #set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-#    InstallDir \\\"$PROGRAMFILES32\\\\Tydex\\\"
+#    InstallDir \\\"$PROGRAMFILES\\\\Tydex\\\"
 #")
 
 set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "

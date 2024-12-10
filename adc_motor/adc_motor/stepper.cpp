@@ -12,7 +12,7 @@ DWORD dwRead;
 HANDLE hEvent;
 unsigned long int data = 0;
 bool check = true;
-OVERLAPPED overRead, overWrite;
+//OVERLAPPED overRead, overWrite;
 std::ofstream file_data;
 
 using namespace std;
@@ -35,12 +35,12 @@ stepper::stepper()
 
 bool stepper::initialize() {
     try {
-        hSerial = CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
-        memset(&overRead, 0, sizeof(OVERLAPPED));
-        memset(&overWrite, 0, sizeof(OVERLAPPED));
+        hSerial = CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        //memset(&overRead, 0, sizeof(OVERLAPPED));
+        //memset(&overWrite, 0, sizeof(OVERLAPPED));
 
-        overRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-        overWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        //overRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        //overWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
         COMMTIMEOUTS ComTimeOut;
         ComTimeOut.ReadIntervalTimeout = MAXDWORD;
@@ -92,19 +92,19 @@ bool stepper::initialize() {
 
 char* stepper::read(){
     memset(inputData, 0, 1024);
-    if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, &overRead) && GetLastError() == ERROR_IO_PENDING)
+    if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, NULL))
     {
-        WaitForSingleObject(overRead.hEvent, INFINITE);
-        GetOverlappedResult(hSerial, &overRead, &dwRead, FALSE);
+        //WaitForSingleObject(overRead.hEvent, INFINITE);
+        //GetOverlappedResult(hSerial, &overRead, &dwRead, FALSE);
     }
     return inputData;
 }
 
 void stepper::write_cmd(char* outputData) { 
-    if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, &overWrite) && (GetLastError() == ERROR_IO_PENDING))
+    if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, NULL))
     {
-        WaitForSingleObject(overWrite.hEvent, INFINITE);
-        GetOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
+        //WaitForSingleObject(overWrite.hEvent, INFINITE);
+        //etOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
     }
 }
 
@@ -144,23 +144,24 @@ StpCoord stepper::get_current_coord() {
 
 bool stepper::home() {
     char cmd[1024];
+    char tmp[1024];
     strcpy_s(cmd, "$H\n");
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    read();
+    tmp[0] = *read();
 
     strcpy_s(cmd, "$H Z\n");
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    read();
+    tmp[0] = *read();
 
     strcpy_s(cmd, "G91\n");
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    read();
+    tmp[0] = *read();
 
     return true;
 }
@@ -204,10 +205,10 @@ bool stepper::move(float val, std::string coord) {
 }
 
 void stepper::close() {
-    if (overRead.hEvent != NULL)
+   /* if (overRead.hEvent != NULL)
         CloseHandle(overRead.hEvent);
     if (overWrite.hEvent != NULL)
-        CloseHandle(overWrite.hEvent);
+        CloseHandle(overWrite.hEvent);*/
     if (hSerial != 0) {
         if (!CloseHandle(hSerial))
             throw runtime_error("CloseHandle error\n");

@@ -67,6 +67,12 @@ class render
 			  }
 		  }
 	  };
+	struct DataStruct {
+		float data;
+		float x;
+		float y;
+		float z;
+	};
 
 	enum class CTL_ID {
 		TEXTFIELD,

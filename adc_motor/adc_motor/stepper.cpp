@@ -291,6 +291,108 @@ bool stepper::algorithm(AlgCoord coord, ADC adc, int delay) {
     return true;
 }
 
+bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
+    char cmd[32];
+    char data_s[1024];
+    float data;
+    strcpy_s(cmd, "G90\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+    read();
+
+    file_data.open("test_data.txt");
+    if (!file_data)
+        return false;
+
+    int i = 0;
+    int j = 0;
+    int k = 0;
+
+    float val_x = 0;
+    float val_y = 0;
+    float val_z = 0;
+
+    bool y_inv = false;
+    bool z_inv = false;
+
+    if (coord.step_x == 0)
+        coord.step_x = 1;
+    if (coord.step_y == 0)
+        coord.step_y = 1;
+    if (coord.step_z == 0)
+        coord.step_z = 1;
+
+    do {
+        val_x = coord.begin_x + coord.step_x * i;
+        move(val_x, "x");
+        while (true) {
+            if (current_coord.x == val_x)
+                break;
+        }
+        i++;
+        Sleep(100);
+        j = 0;
+        if (current_coord.y == coord.begin_y) {
+            y_inv = false;
+        }
+        if (current_coord.y == coord.end_y) {
+            y_inv = true;
+        }
+        do {
+            if (!y_inv) {
+                val_y = coord.begin_y + coord.step_y * j;
+            }
+            if (y_inv) {
+                val_y = coord.end_y - coord.step_y * j;
+            }
+            move(val_y, "y");
+            while (true) {
+                if (current_coord.y == val_y)
+                    break;
+            }
+            j++;
+            Sleep(100);
+            k = 0;
+
+            if (current_coord.z == coord.begin_z) {
+                z_inv = false;
+            }
+            if (current_coord.z == coord.end_z) {
+                z_inv = true;
+            }
+
+            while (k <= ((coord.end_z - coord.begin_z) / coord.step_z)) {
+                if (!z_inv) {
+                    val_z = coord.begin_z + coord.step_z * k;
+                }
+                if (z_inv) {
+                    val_z = coord.end_z - coord.step_z * k;
+                }
+                move(val_z, "z");
+                while (true) {
+                    if (current_coord.z == val_z)
+                        break;
+                }
+                Sleep(delay);
+                data = adc.data_avg(adc.data_proc());
+                sprintf_s(data_s, "X: %f, Y: %f, Z: %f, Data: %f\n", current_coord.x, current_coord.y, current_coord.z, data);
+                file_data << data_s;
+                k++;
+                Sleep(100);
+            }
+        } while (j <= ((coord.end_y - coord.begin_y) / coord.step_y));
+    } while (i <= ((coord.end_x - coord.begin_x) / coord.step_x));
+
+    strcpy_s(cmd, "G91\n");
+    Sleep(100);
+    write_cmd(cmd);
+    Sleep(100);
+
+    file_data.close();
+    return true;
+} 
+
 void stepper::test(AlgCoord coord) {
     char cmd[32];
     strcpy_s(cmd, "G90\n");

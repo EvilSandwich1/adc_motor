@@ -377,14 +377,63 @@ void render::stepper_output(char* outputData) {
 
 void render::visualize() {
     std::ifstream file_data;
-    std::string data;
+    std::string data, tmp;
+    std::vector<DataStruct> dataStr;
+    DataStruct tmpStruct;
+    int count = 0;
 
     file_data.open("input.txt");
 
     while (std::getline(file_data, data)) {
+        
+        for (int i = data.find("X:") + 2; i < data.find("X:") + 9; i++) {
+            tmp += data[i];
+        }
+        tmpStruct.x = stof(tmp);
+        tmp.clear();
+        for (int i = data.find("Y:") + 2; i < data.find("Y:") + 9; i++) {
+            tmp += data[i];
+        }
+        tmpStruct.y = stof(tmp);
+        tmp.clear();
+        for (int i = data.find("Z:") + 2; i < data.find("Z:") + 9; i++) {
+            tmp += data[i];
+        }
+        tmpStruct.z = stof(tmp);
+        tmp.clear();
+        for (int i = data.find("Data:") + 5; i < data.find("Data:") + 15; i++) {
+            tmp += data[i];
+        }
+        tmpStruct.data = stof(tmp);
+        tmp.clear();
+        dataStr.push_back(tmpStruct);
+        count++;
+    }
+    file_data.close();
+    
+    int n = dataStr.size();
+    for (int j = 1; j < n; j++) {
+        bool isSorted = true;
+        for (int i = 0; i < n - j; i++) {
+            if (dataStr[i].x > dataStr[i + 1].x) {
+                DataStruct tmp = dataStr[i];
+                dataStr[i] = dataStr[i + 1];
+                dataStr[i + 1] = tmp;
+                isSorted = false;
+            }
+        }
+        if (isSorted) {
+            break;
+        }
+    }
+    
+    float tmp_group_x = dataStr[0].x;
+    for (int i = 0; i < n; i++) {
 
     }
 }
+
+
 
 void render::d3dctx() {
     render::FrameContext* frameCtx = WaitForNextFrameResources();

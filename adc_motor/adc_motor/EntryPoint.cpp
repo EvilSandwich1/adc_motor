@@ -40,9 +40,11 @@ AlgCoord algorithm_coord = { 0 };
 int delay_g = 0;
 std::thread motorThread;
 std::thread algorithmThread;
+std::thread algorithmSmartThread;
 std::jthread adcInitThread;
 ImGuiContext& g = *GImGui;
 std::future<bool> futureAl;
+std::future<bool> futureAlSmart;
 std::future<bool> futureInit;
 
 static void HelpMarker(const char* desc)
@@ -127,6 +129,14 @@ bool algoThread(AlgCoord &coord, std::shared_ptr<std::promise<bool>> promise, in
 	//if (g.GroupStack.Size > 0)
 	//	ImGui::EndGroup();
 	bool res = motor.algorithm(coord, adc, delay);
+	promise->set_value(res);
+	return res;
+}
+
+bool algoSmartThread(AlgCoord& coord, std::shared_ptr<std::promise<bool>> promise, int delay) {
+	//if (g.GroupStack.Size > 0)
+	//	ImGui::EndGroup();
+	bool res = motor.algorithm_smart(coord, adc, delay);
 	promise->set_value(res);
 	return res;
 }
@@ -225,6 +235,26 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	if (algorithmThread.joinable()) {
 		if (futureAl.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
 			algorithmThread.join();
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Start smart")) {
+		if (algorithm_coord.begin_x < algorithm_coord.end_x)
+			return current_coord;
+		if (algorithm_coord.begin_y < algorithm_coord.end_y)
+			return current_coord;
+		if (algorithm_coord.begin_z < algorithm_coord.end_z)
+			return current_coord;
+
+		//motor.test(algorithm_coord);
+		auto promise = std::make_shared<std::promise<bool>>();
+
+		futureAlSmart = promise->get_future();
+		algorithmSmartThread = std::thread(algoSmartThread, std::ref(algorithm_coord), std::move(promise), std::ref(delay_g));
+	}
+	if (algorithmSmartThread.joinable()) {
+		if (futureAlSmart.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+			algorithmSmartThread.join();
 		}
 	}
 	return current_coord;
@@ -446,7 +476,7 @@ int main() {
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Visualize")) {
-			
+				ren.visualize();
 			}
 			ImGui::EndTabBar();
 		}

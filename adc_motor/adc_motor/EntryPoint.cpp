@@ -477,6 +477,7 @@ int main() {
 			}
 			if (ImGui::BeginTabItem("Visualize")) {
 				ren.visualize();
+				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
 		}

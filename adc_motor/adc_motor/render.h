@@ -23,6 +23,7 @@
 #include <array>
 #include <vector>
 #include <algorithm>
+#include <new>
 
 #include ".\include\imgui\imgui.h"
 #include ".\include\imgui\imconfig.h"

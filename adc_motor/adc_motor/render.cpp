@@ -40,6 +40,7 @@ static bool showCursor;
 static bool autoset;
 static bool showVis;
 static float wt_vt = 1.0;
+static float* vis_values;
 
 static float t{};
 static render::ScrollingBuffer dataAnalog;
@@ -383,105 +384,73 @@ void render::visualize() {
     std::vector<DataStruct> dataStr;
     DataStruct tmpStruct;
     int count = 0;
+    static int unique_y = 0;
+    static std::vector<int> border_x;
+    static std::vector<int> border_y;
     
-    if (ImGui::Button("Go!")) {
-        showVis = true;
-    }
-    if (showVis){
-        file_data.open("input.txt");
+	if (ImGui::Button("Go!")) {
+        if (!showVis) {
+            showVis = true;
 
-        while (std::getline(file_data, data)) {
+            file_data.open("input.txt");
 
-            for (int i = data.find("X:") + 2; i < data.find("X:") + 9; i++) {
-                tmp += data[i];
-            }
-            tmpStruct.x = stof(tmp);
-            tmp.clear();
-            for (int i = data.find("Y:") + 2; i < data.find("Y:") + 9; i++) {
-                tmp += data[i];
-            }
-            tmpStruct.y = stof(tmp);
-            tmp.clear();
-            for (int i = data.find("Z:") + 2; i < data.find("Z:") + 9; i++) {
-                tmp += data[i];
-            }
-            tmpStruct.z = stof(tmp);
-            tmp.clear();
-            for (int i = data.find("Data:") + 5; i < data.find("Data:") + 15; i++) {
-                tmp += data[i];
-            }
-            tmpStruct.data = stof(tmp);
-            tmp.clear();
-            dataStr.push_back(tmpStruct);
-            count++;
-        }
-        file_data.close();
+            while (std::getline(file_data, data)) {
 
-        int n = dataStr.size();
-        for (int j = 1; j < n; j++) {
-            bool isSorted = true;
-            for (int i = 0; i < n - j; i++) {
-                if (dataStr[i].x > dataStr[i + 1].x) {
-                    DataStruct tmp = dataStr[i];
-                    dataStr[i] = dataStr[i + 1];
-                    dataStr[i + 1] = tmp;
-                    isSorted = false;
+                for (int i = data.find("X:") + 2; i < data.find("X:") + 9; i++) {
+                    tmp += data[i];
                 }
+                tmpStruct.x = stof(tmp);
+                tmp.clear();
+                for (int i = data.find("Y:") + 2; i < data.find("Y:") + 9; i++) {
+                    tmp += data[i];
+                }
+                tmpStruct.y = stof(tmp);
+                tmp.clear();
+                for (int i = data.find("Z:") + 2; i < data.find("Z:") + 9; i++) {
+                    tmp += data[i];
+                }
+                tmpStruct.z = stof(tmp);
+                tmp.clear();
+                for (int i = data.find("Data:") + 5; i < data.find("Data:") + 15; i++) {
+                    tmp += data[i];
+                }
+                tmpStruct.data = stof(tmp);
+                tmp.clear();
+                dataStr.push_back(tmpStruct);
+                count++;
             }
-            if (isSorted) {
-                break;
-            }
-        }
+            file_data.close();
 
-        int unique_x = 0;
-        for (int i = 0; i < n - 1; i++) {
-            if (dataStr[i].x != dataStr[i + 1].x)
-                unique_x++;
-        }
-
-        std::vector<int> border_x;
-        border_x.push_back(0);
-        for (int k = 0; k <= unique_x; k++) {
+            int n = dataStr.size();
             for (int j = 1; j < n; j++) {
                 bool isSorted = true;
-                for (int i = border_x[k]; i < n - j; i++) {
-                    if (dataStr[i].x == dataStr[i + 1].x) {
-                        if (dataStr[i].y > dataStr[i + 1].y) {
-                            DataStruct tmp = dataStr[i];
-                            dataStr[i] = dataStr[i + 1];
-                            dataStr[i + 1] = tmp;
-                            isSorted = false;
-                        }
-                    }
-                    else {
-                        border_x.push_back(i + 1);
-                        border_x.erase(unique(border_x.begin(), border_x.end()), border_x.end());
+                for (int i = 0; i < n - j; i++) {
+                    if (dataStr[i].x > dataStr[i + 1].x) {
+                        DataStruct tmp = dataStr[i];
+                        dataStr[i] = dataStr[i + 1];
+                        dataStr[i + 1] = tmp;
                         isSorted = false;
-                        break;
                     }
                 }
                 if (isSorted) {
                     break;
                 }
             }
-        }
 
-        int unique_y = 0;
-        for (int i = 0; i < n - 1; i++) {
-            if (dataStr[i].y != dataStr[i + 1].y)
-                unique_y++;
-        }
-        unique_y = unique_y / unique_x;
+            int unique_x = 0;
+            for (int i = 0; i < n - 1; i++) {
+                if (dataStr[i].x != dataStr[i + 1].x)
+                    unique_x++;
+            }
 
-        std::vector<int> border_y;
-        border_y.push_back(0);
-        for (int h = 0; h <= unique_x; h++) {
-            for (int k = 0; k <= unique_y; k++) {
+
+            border_x.push_back(0);
+            for (int k = 0; k <= unique_x; k++) {
                 for (int j = 1; j < n; j++) {
                     bool isSorted = true;
-                    for (int i = border_y[k] + border_x[h]; i < n - j; i++) {
-                        if (dataStr[i].y == dataStr[i + 1].y) {
-                            if (dataStr[i].z > dataStr[i + 1].z) {
+                    for (int i = border_x[k]; i < n - j; i++) {
+                        if (dataStr[i].x == dataStr[i + 1].x) {
+                            if (dataStr[i].y > dataStr[i + 1].y) {
                                 DataStruct tmp = dataStr[i];
                                 dataStr[i] = dataStr[i + 1];
                                 dataStr[i + 1] = tmp;
@@ -489,8 +458,8 @@ void render::visualize() {
                             }
                         }
                         else {
-                            border_y.push_back(i + 1);
-                            border_y.erase(unique(border_y.begin(), border_y.end()), border_y.end());
+                            border_x.push_back(i + 1);
+                            border_x.erase(unique(border_x.begin(), border_x.end()), border_x.end());
                             isSorted = false;
                             break;
                         }
@@ -500,41 +469,72 @@ void render::visualize() {
                     }
                 }
             }
+
+            if (border_x.size() == 1) {
+                border_x.push_back(dataStr.size());
+            }
+
+            for (int i = 0; i < n - 1; i++) {
+                if (dataStr[i].y != dataStr[i + 1].y)
+                    unique_y++;
+            }
+            unique_y = unique_y / (unique_x + 1);
+
+            border_y.push_back(0);
+            for (int h = 0; h <= unique_x; h++) {
+                for (int k = 0; k <= unique_y; k++) {
+                    for (int j = 1; j < n; j++) {
+                        bool isSorted = true;
+                        for (int i = border_y[k] + border_x[h]; i < n - j; i++) {
+                            if (dataStr[i].y == dataStr[i + 1].y) {
+                                if (dataStr[i].z > dataStr[i + 1].z) {
+                                    DataStruct tmp = dataStr[i];
+                                    dataStr[i] = dataStr[i + 1];
+                                    dataStr[i + 1] = tmp;
+                                    isSorted = false;
+                                }
+                            }
+                            else {
+                                border_y.push_back(i + 1);
+                                border_y.erase(unique(border_y.begin(), border_y.end()), border_y.end());
+                                isSorted = false;
+                                break;
+                            }
+                        }
+                        if (isSorted) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            int rows = unique_y + 1;
+            int columns = border_y[1];
+
+            vis_values = new float[(rows * columns)+1];
+
+            for (int i = 0; i < border_x[1]; i++) {
+                vis_values[i] = dataStr[i].data;
+            }
         }
-        /*Насрано, переделать TODO*/
-        float* matrix;
-        float** values;
-        int rows = unique_y;
-        int columns = border_y[1];
-        int k = 0;
-        matrix = new float[columns * rows];
-
-        float values1[40][40];
-        
-
-
-        values = new float* [rows];
-        for (int i = 0; i < rows; i++) {
-            values[i] = &matrix[i * columns];
-        }
-
+	}
+    if (showVis) {
         static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
-        if (ImPlot::BeginPlot("##Heatmap1", ImVec2(225, 225), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+        ImPlot::PushColormap(ImPlotColormap_Viridis);
+        if (ImPlot::BeginPlot("##Heatmap1", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
             ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-            ImPlot::SetupAxisTicks(ImAxis_X1, 0 + 1.0 / 14.0, 1 - 1.0 / 14.0, 7);
-            ImPlot::SetupAxisTicks(ImAxis_Y1, 1 - 1.0 / 14.0, 0 + 1.0 / 14.0, 7);
-            ImPlot::PlotHeatmap("heat", values1, unique_y, border_x[1], 0, 7);
+            ImPlot::PlotHeatmap("heat", vis_values, unique_y+1, border_y[1], 3, 7, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1));
             ImPlot::EndPlot();
         }
-        delete[] matrix;
-        delete[] values;
+        ImGui::SameLine();
+        ImPlot::ColormapScale("##HeatScale1", -1, 1, ImVec2(60, 225));
     }
     else {
-        float values[1600] = { 0 };
         
+        float trash[1600] = { 0 };
         static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
-        if (ImPlot::BeginPlot("##plot34", ImVec2(225, 225), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
-            ImPlot::PlotHeatmap("ehhhh", values, 40, 40, 0, 0);
+        if (ImPlot::BeginPlot("##plot34", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+            ImPlot::PlotHeatmap("ehhhh", trash, 40, 40, 0, 0);
             ImPlot::EndPlot();
         }
     }
@@ -1002,6 +1002,9 @@ void render::cleanup(LPCWSTR classname)
     CleanupDeviceD3D();
     DestroyWindow(m_hWnd);
     UnregisterClassW(classname, NULL);
+    delete[] vis_values;
 }
 
-render::~render() {}
+render::~render() {
+    //delete[] vis_values;
+}

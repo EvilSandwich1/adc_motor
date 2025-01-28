@@ -318,7 +318,7 @@ int main() {
 		}
 		if (done)
 			break;
-		//float* data = adc.frame();
+		
 
 		if (ren.adcConnectInProgress && ren.connectStartUpADC && !connectDone) {
 			auto promise = std::make_shared<std::promise<bool>>();
@@ -339,7 +339,7 @@ int main() {
 				if (futureInit.get()) {
 					connectDone = true;
 					ren.isConnected = true;
-					adc.stream_setup();
+					//adc.stream_setup(); // —»Õ’–ŒÕÕ¿ﬂ ≈¡”Àƒ€√¿
 				}
 				else {
 					ren.adcConnectInProgress = false;
@@ -387,8 +387,10 @@ int main() {
 		}
 		
 		float avg = 0;
+		float data = 0;
 		if (ren.isConnected) {
-			avg = adc.data_avg(adc.data_proc());
+			data = adc.frame();
+			//avg = adc.data_avg(adc.data_proc());// —»Õ’–ŒÕÕ¿ﬂ ≈¡”Àƒ€√¿
 		}
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
@@ -455,12 +457,12 @@ int main() {
 				ImGui::EndTabItem();
 			}*/
 			if (ImGui::BeginTabItem("Scrolling")) {
-				ren.scrolling(avg);
+				ren.scrolling(data);
 				ren.connect();
 				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
 			}
-			if (ImGui::BeginTabItem("Oscilloscope")) {
+			/*if (ImGui::BeginTabItem("Oscilloscope")) {
 				if (ren.isConnected) {
 					if (adc.ready_swap) {
 						tmp_buffer = buffer_long;
@@ -474,7 +476,7 @@ int main() {
 				ren.connect();
 				current_coord = MotorControlPanel(current_coord);
 				ImGui::EndTabItem();
-			}
+			}*/
 			if (ImGui::BeginTabItem("Visualize")) {
 				ren.visualize();
 				ImGui::EndTabItem();

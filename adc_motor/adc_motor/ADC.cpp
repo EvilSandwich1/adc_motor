@@ -133,13 +133,15 @@ bool ADC::init_e440()
 #endif
 
 #define M_FAIL(x,s) do { throw runtime_error(x);  } while(0)
-#define M_OK(x,e)   do {  } while(0)
+#define M_OK(x,e)   do { printf(x); printf("\n"); } while(0)
 
         LUnknown* pIUnknown = CreateInstance(0);
         if (pIUnknown == NULL) { M_FAIL(char_to_str("CreateInstance"), nullptr); return false; }
+        else M_OK("CreateInstance complete", endl);
 
         HRESULT hr = pIUnknown->QueryInterface(IID_ILDEV, (void**)&pI);
         if (!SUCCEEDED(hr)) { M_FAIL(char_to_str("QueryInterface"), nullptr); return false; }
+        else M_OK("QueryInterface complete", endl);
 
         status = pIUnknown->Release();
         M_OK("Release IUnknown", endl);
@@ -183,16 +185,17 @@ bool ADC::init_e440()
     wss << frame();
     //SendMessage(this->m_hWnd, WM_PAINT, NULL, NULL);
 }*/
-float* ADC::frame(){
-//float ADC::frame() {
-    /*datafloat = pp.Data[0];
-    datafloat /= 800.0;*/
-    for (int i = 0; i < 8192; i++) {
+//float* ADC::frame(){
+float ADC::frame() {
+    status = pI->IoAsync(&pp);
+    datafloat = pp.Data[0];
+    datafloat /= 800.0;
+    /*for (int i = 0; i < 8192; i++) {
         status = pI->IoAsync(&pp);
         dataBuffer[i] = pp.Data[0] / 800.0f;
     }
-    return dataBuffer;
-//  return datafloat;
+    return dataBuffer;*/
+    return datafloat;
 }
 
 bool ADC::stream_setup() {
@@ -201,7 +204,7 @@ bool ADC::stream_setup() {
     else M_OK("RequestBufferStream(ADC)", endl);
 
     adcPar.t1.s_Type = L_ADC_PARAM;
-    adcPar.t1.AutoInit = 1;
+    adcPar.t1.AutoInit = 0;
     adcPar.t1.dRate = 1.024;
     adcPar.t1.dKadr = 0;
     adcPar.t1.dScale = 0;
@@ -236,13 +239,14 @@ bool ADC::stream_setup() {
     if (status != L_SUCCESS) { M_FAIL("GetParameter", status); return false; }
     else M_OK("GetParameter", endl);
 
+    status = pI->EnableCorrection();
+    M_OK("Correction complete", endl);
+
     status = pI->InitStartLDevice(); // Инициализируем внутренние переменные драйвера
     if (status != L_SUCCESS) { M_FAIL("InitStartLDevice(ADC)", status); return false; }
     else M_OK("InitStartLDevice(ADC)", endl);
 
     hThread = CreateThread(0, 0x2000, ServiceThread, 0, 0, &Tid); // Создаем и запускаем поток сбора данных
-
-    status = pI->EnableCorrection();
 
     status = pI->StartLDevice(); // Запускаем сбор в драйвере
     if (status != L_SUCCESS) { M_FAIL("StartLDevice(ADC)", status); return false; }
@@ -330,9 +334,10 @@ vector<float>& ADC::data_proc() {
      {
          ULONG s;
          InterlockedExchange(&s, *sync);
-         //cout << ".......... " << setw(8) << s << "\r";
+         cout << ".......... " << setw(8) << s << "\r";
+         
          if (WAIT_OBJECT_0 == WaitForSingleObject(hThread, 0)) { complete = 1; break; }
-         Sleep(10);
+         Sleep(1);
      }
 
      if (!complete)
@@ -340,6 +345,8 @@ vector<float>& ADC::data_proc() {
          InterlockedBitTestAndSet(&complete, 0); //complete=1
          WaitForSingleObject(hThread, INFINITE);
      }
+     printf("data proc");
+     
      ready_swap = false;
      buffer.clear();
      fsize = multi * (pages / 2) * IrqStep;

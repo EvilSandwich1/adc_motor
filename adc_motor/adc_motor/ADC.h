@@ -49,8 +49,8 @@ class ADC
 		//int run();
 		~ADC();
 		//void init_window_class();
-		//float frame();
-		float* frame();
+		float frame();
+		//float* frame();
 		void* stream();
 		std::vector<float>& data_proc();
 		bool stream_setup();

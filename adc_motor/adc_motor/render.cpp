@@ -519,15 +519,17 @@ void render::visualize() {
         }
 	}
     if (showVis) {
+        static float max_val = *max_element(vis_values, vis_values + border_x[1]);
+        static float min_val = *min_element(vis_values, vis_values + border_x[1]);
         static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
         ImPlot::PushColormap(ImPlotColormap_Viridis);
         if (ImPlot::BeginPlot("##Heatmap1", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
             ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-            ImPlot::PlotHeatmap("heat", vis_values, unique_y+1, border_y[1], 3, 7, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1));
+            ImPlot::PlotHeatmap("heat", vis_values, unique_y+1, border_y[1], min_val, max_val, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1), ImPlotHeatmapFlags_ColMajor);
             ImPlot::EndPlot();
         }
         ImGui::SameLine();
-        ImPlot::ColormapScale("##HeatScale1", -1, 1, ImVec2(60, 225));
+        ImPlot::ColormapScale("##HeatScale1", min_val, max_val, ImVec2(60, 225));
     }
     else {
         

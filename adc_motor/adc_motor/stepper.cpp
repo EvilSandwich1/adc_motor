@@ -14,7 +14,7 @@ unsigned long int data = 0;
 bool check = true;
 //OVERLAPPED overRead, overWrite;
 std::ofstream file_data;
-std::ofstream log_file;
+//std::ofstream log_file;
 
 using namespace std;
 
@@ -79,7 +79,7 @@ bool stepper::initialize() {
             return false;
         }
         memset(inputData, 0, sizeof(inputData));
-        SetupComm(hSerial, 1024, 1024);
+        SetupComm(hSerial, 128, 1024);
         COMSTAT comStat;
         ClearCommError(hSerial, &dwError, &comStat);
         return true;
@@ -109,7 +109,7 @@ void stepper::write_cmd(char* outputData) {
     }
 }
 
-StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков? 
+StpCoord stepper::get_current_coord() { 
     char cmd[4];
     strcpy_s(cmd, "?\n");
     write_cmd(cmd);
@@ -120,7 +120,12 @@ StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков?
     if (output_s.empty() || !output_s.contains("WPos") || output_s[0] != '<' || !output_s.contains("."))
         return current_coord;
 
+    if (output_s.find("WPos") + 5 > output_s.size())
+        return current_coord;
+
     for (int i = output_s.find("WPos") + 5; i < output_s.find(","); i++) {
+        if (i >= output_s.size())
+            break;
         tmp += output_s[i];
     }
     if (tmp.contains(",")) {
@@ -134,6 +139,8 @@ StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков?
         return current_coord;
 
     for (int i = 0; i < output_s.find(","); i++) { 
+        if (i >= output_s.size())
+            break;
         tmp += output_s[i];
     }
     if (tmp.contains(",")) {
@@ -148,6 +155,8 @@ StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков?
 
     if (output_s.contains("|")) {
         for (int i = 0; i < output_s.find("|"); i++) {
+            if (i >= output_s.size())
+                break;
             tmp += output_s[i];
         }
         if (tmp.contains("|")) {
@@ -155,7 +164,9 @@ StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков?
         }
     }
     else {
-        for (int i = 0; i < output_s.size(); i++) {
+        for (int i = 0; i < output_s.size() - 1; i++) {
+            if (i >= output_s.size())
+                break;
             tmp += output_s[i];
         }
     }
@@ -166,8 +177,8 @@ StpCoord stepper::get_current_coord() { //TODO: Фиксануть обрезание знаков?
 }
 
 bool stepper::home() {
-    char cmd[1024];
-    char tmp[1024];
+    char cmd[128];
+    char tmp[128];
     strcpy_s(cmd, "$H\n");
     Sleep(100);
     write_cmd(cmd);
@@ -190,13 +201,13 @@ bool stepper::home() {
 }
 
 bool stepper::move(float val, std::string coord) {
-    char cmd[1024];
+    char cmd[128];
 
     if (coord == "x") {
         if (current_coord.x + val >= 0.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0 X%f\n", val);
+        sprintf_s(cmd, "G0X%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -206,7 +217,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.y + val >= 0.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0 Y%f\n", val);
+        sprintf_s(cmd, "G0Y%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -216,7 +227,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.z + val >= 1.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0 Z%f\n", val);
+        sprintf_s(cmd, "G0Z%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -320,23 +331,16 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
     char data_s[1024];
     float data;
 
-    log_file.open("log_stepper.txt");
-
     strcpy_s(cmd, "G90\n");
     this_thread::sleep_for(100ms);
     write_cmd(cmd);
-    log_file << "Stepper: write G90" << endl; // LOG
     this_thread::sleep_for(100ms);
     read();
-    log_file << "Stepper: read" << endl; // LOG
 
     file_data.open("test_data.txt");
-    if (!file_data) {
-        log_file << "Stepper: file_data open failed" << endl; // LOG
+    if (!file_data) 
         return false;
-    }
-    log_file << "Stepper: file_data open" << endl; // LOG
-
+    
     int i = 0;
     int j = 0;
     int k = 0;
@@ -349,36 +353,29 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
     bool z_inv = false;
 
     if (coord.step_x == 0)
-        coord.step_x = 1;
+        coord.step_x = 1.0f;
     if (coord.step_y == 0)
-        coord.step_y = 1;
+        coord.step_y = 1.0f;
     if (coord.step_z == 0)
-        coord.step_z = 1;
+        coord.step_z = 1.0f;
 
     do {
         val_x = coord.begin_x + coord.step_x * i;
         move(val_x, "x");
-        sprintf_s(data_s, "Stepper: move x %f\n", val_x); 
-        log_file << data_s; // LOG
         while (true) {
-            //log_file << "Stepper: move to x in progress shitpost" << endl; // LOG
             if (current_coord.x == val_x)
                 break;
         }
-        log_file << "Stepper: move to x done\n"; // LOG
         i++;
         this_thread::sleep_for(100ms);
         j = 0;
         if (current_coord.y == coord.begin_y) {
             y_inv = false;
-            log_file << "Stepper: y_inv false\n"; // LOG
         }
         if (current_coord.y == coord.end_y) {
             y_inv = true;
-            log_file << "Stepper: y_inv true\n"; // LOG
         }
         do {
-            file_data.close();
             if (!y_inv) {
                 val_y = coord.begin_y + coord.step_y * j;
             }
@@ -386,37 +383,20 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
                 val_y = coord.end_y - coord.step_y * j;
             }
             move(val_y, "y");
-            sprintf_s(data_s, "Stepper: move y %f\n", val_y); 
-            log_file << data_s; // LOG
-            int while_count_y = 0;
             while (true) {
-                while_count_y++;
-                if (while_count_y > 2000000) {
-                    move(val_y, "y");
-                    while_count_y = 0;
-                }
-                sprintf_s(data_s, "%i\n", while_count_y); 
-                log_file << data_s; // LOG
-                //log_file << "Stepper: move to y in progress shitpost" << endl; // LOG
                 if (current_coord.y == val_y)
                     break;
             }
-            log_file << "Stepper: move to y done\n"; // LOG
             j++;
             this_thread::sleep_for(100ms);
             k = 0;
 
             if (current_coord.z == coord.begin_z) {
                 z_inv = false;
-                log_file << "Stepper: z_inv false\n"; // LOG
             }
             if (current_coord.z == coord.end_z) {
                 z_inv = true;
-                log_file << "Stepper: z_inv true\n"; // LOG
             }
-            log_file.close();
-            file_data.open("test_data.txt");
-            log_file.open("log_stepper.txt");
             while (k <= ((coord.end_z - coord.begin_z) / coord.step_z)) {
                 if (!z_inv) {
                     val_z = coord.begin_z + coord.step_z * k;
@@ -425,28 +405,13 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
                     val_z = coord.end_z - coord.step_z * k;
                 }
                 move(val_z, "z");
-                sprintf_s(data_s, "Stepper: move z %f\n", val_z);
-                log_file << data_s; // LOG
-                int while_count_z = 0;
                 while (true) {
-                    //log_file << "Stepper: move to z in progress shitpost" << endl; // LOG
-                    while_count_z++;
-                    if (while_count_z > 2000000) {
-                        move(val_z, "z");
-                        while_count_z = 0;
-                    }
-                    sprintf_s(data_s, "%u\n", while_count_z); 
-                    log_file << data_s; // LOG
                     if (current_coord.z == val_z)
                         break;
                 }
-                log_file << "Stepper: move to z done\n"; // LOG
                 this_thread::sleep_for(std::chrono::milliseconds(delay));
-                log_file << "Stepper: delay done\n"; // LOG
                 //data = adc.data_avg(adc.data_proc()); // СИНХРОННАЯ ЕБУЛДЫГА
                 data = adc.frame();
-                sprintf_s(data_s, "Stepper: adc.frame %f\n", data); 
-                log_file << data_s; // LOG
                 this_thread::sleep_for(100ms);
                 sprintf_s(data_s, "X: %f, Y: %f, Z: %f, Data: %f\n", current_coord.x, current_coord.y, current_coord.z, data);
                 file_data << data_s;
@@ -460,12 +425,9 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
     this_thread::sleep_for(100ms);
     write_cmd(cmd);
     this_thread::sleep_for(100ms);
-    log_file << "Stepper: write G91\n"; // LOG
 
     file_data.close();
-    log_file << "Stepper: file_data close\n"; // LOG
 
-    log_file.close();
     return true;
 } 
 

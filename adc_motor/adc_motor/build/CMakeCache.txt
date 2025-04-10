@@ -15,7 +15,7 @@
 ########################
 
 //Path to a program.
-CMAKE_AR:FILEPATH=D:/Visual Studio/IDE/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/lib.exe
+CMAKE_AR:FILEPATH=D:/Visual Studio/IDE/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/lib.exe
 
 CMAKE_BUILD_TYPE:STRING=Release
 
@@ -79,7 +79,7 @@ CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=D:/рабочий стол/Курган�
 CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/adc_motor
 
 //Path to a program.
-CMAKE_LINKER:FILEPATH=D:/Visual Studio/IDE/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/link.exe
+CMAKE_LINKER:FILEPATH=D:/Visual Studio/IDE/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/link.exe
 
 //Flags used by the linker during the creation of modules during
 // all build types.

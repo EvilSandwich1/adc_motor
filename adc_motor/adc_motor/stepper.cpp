@@ -20,6 +20,70 @@ using namespace std;
 
 StpCoord current_coord;
 
+const wchar_t* FindComPortByVidPid() {
+    static wchar_t result[16] = { 0 }; // Буфер для результата (L"COMX")
+    const wchar_t* usbPath = L"SYSTEM\\CurrentControlSet\\Enum\\USB";
+
+    // Формируем маску VID&PID
+    wchar_t vidPid[32] = L"VID_1A86&PID_7523";
+
+    HKEY hUsbKey;
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, usbPath, 0, KEY_READ, &hUsbKey) != ERROR_SUCCESS) {
+        return nullptr;
+    }
+
+    wchar_t deviceKeyName[256];
+    DWORD index = 0;
+    DWORD nameSize = 256;
+
+    // Ищем устройство с нужным VID&PID
+    while (RegEnumKeyEx(hUsbKey, index++, deviceKeyName, &nameSize,
+        NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
+        if (wcsstr(deviceKeyName, vidPid) != nullptr) {
+            // Нашли устройство, ищем его параметры
+            std::wstring devicePath = std::wstring(usbPath) + L"\\" + deviceKeyName;
+
+            HKEY hDeviceKey;
+            if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, devicePath.c_str(), 0, KEY_READ, &hDeviceKey) == ERROR_SUCCESS) {
+                wchar_t subKeyName[256];
+                DWORD subIndex = 0;
+                DWORD subNameSize = 256;
+
+                // Проверяем подразделы устройства
+                while (RegEnumKeyEx(hDeviceKey, subIndex++, subKeyName, &subNameSize,
+                    NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
+                    std::wstring paramsPath = devicePath + L"\\" + subKeyName + L"\\Device Parameters";
+
+                    HKEY hParamsKey;
+                    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, paramsPath.c_str(), 0, KEY_READ, &hParamsKey) == ERROR_SUCCESS) {
+                        wchar_t portName[256];
+                        DWORD portSize = sizeof(portName);
+
+                        // Получаем имя порта
+                        if (RegQueryValueEx(hParamsKey, L"PortName", NULL, NULL,
+                            (LPBYTE)portName, &portSize) == ERROR_SUCCESS) {
+                            // Проверяем, что это COM-порт
+                            if (wcsncmp(portName, L"COM", 3) == 0) {
+                                swprintf_s(result, L"COM%ls", portName + 3); // Форматируем результат
+                                RegCloseKey(hParamsKey);
+                                RegCloseKey(hDeviceKey);
+                                RegCloseKey(hUsbKey);
+                                return result;
+                            }
+                        }
+                        RegCloseKey(hParamsKey);
+                    }
+                    subNameSize = 256;
+                }
+                RegCloseKey(hDeviceKey);
+            }
+        }
+        nameSize = 256;
+    }
+
+    RegCloseKey(hUsbKey);
+    return nullptr;
+}
 
 stepper::stepper()
 {
@@ -36,6 +100,7 @@ stepper::stepper()
 
 bool stepper::initialize() {
     try {
+        sPortName = FindComPortByVidPid();
         hSerial = CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         //memset(&overRead, 0, sizeof(OVERLAPPED));
         //memset(&overWrite, 0, sizeof(OVERLAPPED));
@@ -51,8 +116,7 @@ bool stepper::initialize() {
         ComTimeOut.WriteTotalTimeoutConstant = 0;
         SetCommTimeouts(hSerial, &ComTimeOut);
 
-        if (hSerial == INVALID_HANDLE_VALUE)
-        {
+        if (hSerial == INVALID_HANDLE_VALUE){
             throw runtime_error("CreateFile failed with error %d.\n");
             return false;
         }
@@ -60,8 +124,7 @@ bool stepper::initialize() {
         dcb.DCBlength = sizeof(DCB);
 
         fSuccess = GetCommState(hSerial, &dcb);
-        if (!fSuccess)
-        {
+        if (!fSuccess){
             throw runtime_error("GetCommState error");
             return false;
         }
@@ -73,8 +136,7 @@ bool stepper::initialize() {
 
         fSuccess = SetCommState(hSerial, &dcb);
 
-        if (!fSuccess)
-        {
+        if (!fSuccess){
             throw runtime_error("SetCommState error\n");
             return false;
         }
@@ -82,10 +144,11 @@ bool stepper::initialize() {
         SetupComm(hSerial, 128, 1024);
         COMSTAT comStat;
         ClearCommError(hSerial, &dwError, &comStat);
+
+        write_cmd(const_cast<char*>("\r\n\r\n"));
         return true;
     }
-    catch (const std::exception& e)
-    {
+    catch (const std::exception& e){
         string excpt_data = e.what();
         MessageBox(nullptr, wstring(begin(excpt_data), end(excpt_data)).c_str(), L"Error", MB_ICONERROR | MB_OK);
     }
@@ -185,11 +248,15 @@ bool stepper::home() {
     Sleep(100);
     tmp[0] = *read();
 
+    Sleep(500);
+
     strcpy_s(cmd, "$H Z\n");
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
     tmp[0] = *read();
+
+    Sleep(500);
 
     strcpy_s(cmd, "G91\n");
     Sleep(100);

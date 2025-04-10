@@ -16,6 +16,8 @@
 #pragma comment(lib, "dxgi")
 #include <dxgi1_4.h>
 #include <tchar.h>
+#include <shobjidl.h>
+#include <windows.h>
 
 #ifdef _DEBUG
 #define DX12_ENABLE_DEBUG_LAYER
@@ -143,6 +145,7 @@ bool algoSmartThread(AlgCoord& coord, std::shared_ptr<std::promise<bool>> promis
 
 StpCoord MotorControlPanel(StpCoord current_coord) {
 	static int counter_10hz = 0;
+
 	memset(cmd, 0, 1024);
 	strcpy(cmd, ren.stepper_input());
 	strcat_s(cmd, "\n");
@@ -158,7 +161,7 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ren.stepper_output(output);
 
 	if (connectDoneMotor) {
-		counter_10hz++;
+		++counter_10hz;
 		if (counter_10hz >= 4) {
 			current_coord = motor.get_current_coord();
 			counter_10hz = 0;
@@ -262,6 +265,7 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 			algorithmSmartThread.join();
 		}
 	}
+
 	return current_coord;
 }
 

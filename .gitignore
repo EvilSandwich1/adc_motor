@@ -1,6 +1,5 @@
 #vs
 **/.vs/
-*.vcxproj
 **/Debug
 **/Release
 *.filters

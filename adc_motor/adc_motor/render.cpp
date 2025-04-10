@@ -171,6 +171,50 @@ LRESULT CALLBACK render::wnd_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     }
 }
+
+PWSTR openFile() {
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+        COINIT_DISABLE_OLE1DDE);
+
+    if (FAILED(hr)) {
+        CoUninitialize();
+        return NULL;
+    }
+
+    IFileOpenDialog* pFileOpen;
+
+    // Create the FileOpenDialog object.
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+        IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+    if (FAILED(hr)) {
+        CoUninitialize();
+        return NULL;
+    }
+
+    hr = pFileOpen->Show(NULL);
+
+    if (FAILED(hr)) {
+        pFileOpen->Release();
+        CoUninitialize();
+        return NULL;
+    }
+
+    IShellItem* pItem;
+    hr = pFileOpen->GetResult(&pItem);
+
+    if (FAILED(hr)) {
+        pFileOpen->Release();
+        CoUninitialize();
+        return NULL;
+    }
+
+    PWSTR f_Path;
+    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &f_Path);
+
+    return f_Path;
+}
+
 void render::demo() {
     bool show_demo_window = true;
     if (show_demo_window) {
@@ -239,6 +283,9 @@ void render::scrolling(float data) {
 
     ImGui::Text("Voltage = %f", data);
     ImGui::InputFloat("Watt/volt coefficient", &wt_vt, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_None); //ImGuiInputTextFlags_CharsDecimal
+    if (ImGui::Button("Reset")) {
+        dataAnalog.Erase();
+    }
 }
 
 void render::oscilloscope(std::vector<float> data, int samples) {
@@ -381,7 +428,7 @@ void render::stepper_output(char* outputData) {
 void render::visualize() {
     std::ifstream file_data;
     std::string data, tmp;
-    std::vector<DataStruct> dataStr;
+    static std::vector<DataStruct> dataStr;
     DataStruct tmpStruct;
     int count = 0;
     static int unique_y = 0;
@@ -389,10 +436,18 @@ void render::visualize() {
     static std::vector<int> border_y;
     
 	if (ImGui::Button("Go!")) {
+        PWSTR f_Path = openFile();
+        showVis = false;
         if (!showVis) {
             showVis = true;
+            
+            border_x.clear();
+            border_y.clear();
+            unique_y = 0;
+            count = 0;
+            dataStr.clear();
 
-            file_data.open("input.txt");
+            file_data.open(f_Path);
 
             while (std::getline(file_data, data)) {
 
@@ -470,9 +525,9 @@ void render::visualize() {
                 }
             }
 
-            if (border_x.size() == 1) {
-                border_x.push_back(dataStr.size());
-            }
+            //тут была проверка border_x.size() == 1
+            border_x.push_back(dataStr.size());
+            
 
             for (int i = 0; i < n - 1; i++) {
                 if (dataStr[i].y != dataStr[i + 1].y)
@@ -516,27 +571,77 @@ void render::visualize() {
             for (int i = 0; i < border_x[1]; i++) {
                 vis_values[i] = dataStr[i].data;
             }
+            
         }
 	}
+
     if (showVis) {
+        static int current_x_set = 0;
+        static bool end_l = false;
+        static bool end_r = false;
+        static bool rewrite = false;
         static float max_val = *max_element(vis_values, vis_values + border_x[1]);
         static float min_val = *min_element(vis_values, vis_values + border_x[1]);
         static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
-        ImPlot::PushColormap(ImPlotColormap_Viridis);
+
+        if (current_x_set == 0) {
+            end_l = true;
+            ImGui::BeginDisabled();
+        }
+
+        if (ImGui::Button("Left")) {
+            current_x_set--;
+            rewrite = true;
+        }
+
+        if (end_l) {
+            end_l = false;
+            ImGui::EndDisabled();
+        }
+
+        ImGui::SameLine();
+
+        if (current_x_set + 1 == border_x.size() - 1) {
+            end_r = true;
+            ImGui::BeginDisabled();
+        }
+
+        if (ImGui::Button("Right")) {
+            current_x_set++;
+            rewrite = true;
+        }
+
+        if (end_r) {
+            end_r = false;
+            ImGui::EndDisabled();
+        }
+        if (rewrite) {
+            for (int i = 0; i < border_x[1]; i++) {
+                vis_values[i] = dataStr[i + border_x[current_x_set]].data;
+            }
+            rewrite = false;
+        }
+
+        max_val = *max_element(vis_values, vis_values + border_x[1]);
+        min_val = *min_element(vis_values, vis_values + border_x[1]);
+
+        ImPlot::PushColormap(ImPlotColormap_Greys);
         if (ImPlot::BeginPlot("##Heatmap1", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
             ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-            ImPlot::PlotHeatmap("heat", vis_values, unique_y+1, border_y[1], min_val, max_val, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1), ImPlotHeatmapFlags_ColMajor);
+            ImPlot::PlotHeatmap("heat", vis_values, border_y[1], unique_y + 1, min_val, max_val, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1), ImPlotHeatmapFlags_ColMajor);
             ImPlot::EndPlot();
         }
         ImGui::SameLine();
         ImPlot::ColormapScale("##HeatScale1", min_val, max_val, ImVec2(60, 225));
+        ImGui::Text("Current x = %f", dataStr[border_x[current_x_set]].x);
+
     }
     else {
         
-        float trash[1600] = { 0 };
+        float trash[400] = { 0 };
         static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
         if (ImPlot::BeginPlot("##plot34", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
-            ImPlot::PlotHeatmap("ehhhh", trash, 40, 40, 0, 0);
+            ImPlot::PlotHeatmap("ehhhh", trash, 20, 20, 0, 0);
             ImPlot::EndPlot();
         }
     }

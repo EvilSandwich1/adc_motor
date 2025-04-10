@@ -8,6 +8,7 @@
 #include <string>
 #include <thread>
 #include <future>
+#include <chrono>
 #include "ADC.h"
 #define ASCII
 

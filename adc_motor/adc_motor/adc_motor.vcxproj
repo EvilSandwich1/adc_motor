@@ -172,7 +172,6 @@
     <ClInclude Include="include\lcpi.h" />
     <ClInclude Include="include\ldevbase.h" />
     <ClInclude Include="include\pcicmd.h" />
-    <ClInclude Include="include\pffft\pffft.h" />
     <ClInclude Include="include\plx.h" />
     <ClInclude Include="include\salayer.h" />
     <ClInclude Include="include\stb_image.h" />
@@ -198,7 +197,6 @@
     <ClCompile Include="include\implot\implot_demo.cpp" />
     <ClCompile Include="include\implot\implot_items.cpp" />
     <ClCompile Include="include\lguids.cpp" />
-    <ClCompile Include="include\pffft\pffft.c" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="stepper.cpp" />
   </ItemGroup>

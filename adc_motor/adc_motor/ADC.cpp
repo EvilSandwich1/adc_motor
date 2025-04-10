@@ -273,7 +273,7 @@ void* ADC::stream() {
 	return datas;
 }
 
-void ADC::pffft(int npoints, int window_id) {
+/*void ADC::pffft(int npoints, int window_id) {
 	data_proc();
 	static float scaleFactor;
 	static float maxVolt = 2.5f;
@@ -312,7 +312,7 @@ void ADC::pffft(int npoints, int window_id) {
 	PFFFT_Setup* pffft_setup = pffft_new_setup(npoints, PFFFT_REAL);
 	pffft_transform_ordered(pffft_setup, &pffft_input_buffer[0], &pffft_buffer[0], NULL, PFFFT_FORWARD);
 	pffft_destroy_setup(pffft_setup);
-}
+}*/
 
 void ADC::disconnect() {
 	status = pI->StopLDevice(); // Остановили сбор

@@ -30,7 +30,6 @@
 #include ".\include\791cmd.h"
 #include ".\include\e2010cmd.h"
 #include ".\include\e154cmd.h"
-#include ".\include\pffft\pffft.h"
 
 class ADC 
 {
@@ -55,7 +54,7 @@ class ADC
 		std::vector<float>& data_proc();
 		bool stream_setup();
 		float data_avg(std::vector<float>& dataStream);
-		void pffft(int npoints, int window_id);
+		//void pffft(int npoints, int window_id);
 		bool init_e440();
 		void disconnect();
 	private:

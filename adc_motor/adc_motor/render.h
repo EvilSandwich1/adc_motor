@@ -31,7 +31,6 @@
 #include ".\include\imgui\imgui_impl_win32.h"
 #include ".\include\implot\implot.h"
 #include ".\include\implot\implot_internal.h"
-#include ".\include\pffft\pffft.h"
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <tchar.h>

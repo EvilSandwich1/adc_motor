@@ -43,6 +43,7 @@ int delay_g = 0;
 std::thread motorThread;
 std::thread algorithmThread;
 std::thread algorithmSmartThread;
+std::thread justThread;
 std::jthread adcInitThread;
 ImGuiContext& g = *GImGui;
 std::future<bool> futureAl;
@@ -141,6 +142,10 @@ bool algoSmartThread(AlgCoord& coord, std::shared_ptr<std::promise<bool>> promis
 	bool res = motor.algorithm_smart(coord, adc, delay);
 	promise->set_value(res);
 	return res;
+}
+
+void justThreadFunc(float speed) {
+	motor.just(speed);
 }
 
 StpCoord MotorControlPanel(StpCoord current_coord) {
@@ -270,7 +275,8 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::PushItemWidth(50);
 	ImGui::InputFloat("Speed", &speed);
 	ImGui::SameLine();
-	if (ImGui::Button("Just")) motor.just(speed);
+	if (ImGui::Button("Just")) justThread = std::thread(justThreadFunc, speed);
+	if (justThread.joinable()) justThread.join();
 
 	return current_coord;
 }

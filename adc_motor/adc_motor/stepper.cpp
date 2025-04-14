@@ -176,13 +176,13 @@ void stepper::just(float speed) {
     char cmd[32];
     float cur_x = current_coord.x;
 
-    if (cur_x > 127.0 || cur_x < 5) return;
+    if (cur_x < -127.0 || cur_x > -5.0) return;
     sprintf_s(cmd, "G1 X-5.0 F%f", speed);
     write_cmd(cmd);
 
     while (true) {
         if (current_coord.x == cur_x - 5.0) {
-            sprintf_s(cmd, "G1 X5.0 F%f", speed);
+            sprintf_s(cmd, "X5.0 F%f", speed);
             write_cmd(cmd);
             break;
         }

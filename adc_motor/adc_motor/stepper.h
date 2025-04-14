@@ -39,6 +39,7 @@ public:
 	bool initialize();
 	char* read();
 	void write_cmd(char* outputData);
+	void just(float speed);
 	StpCoord get_current_coord();
 	bool home();
 	bool move(float val, std::string coord);

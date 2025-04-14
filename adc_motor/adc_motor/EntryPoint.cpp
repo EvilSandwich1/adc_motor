@@ -265,6 +265,12 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 			algorithmSmartThread.join();
 		}
 	}
+	ImGui::SameLine();
+	static float speed = 0;
+	ImGui::PushItemWidth(50);
+	ImGui::InputFloat("Speed", &speed);
+	ImGui::SameLine();
+	if (ImGui::Button("Just")) motor.just(speed);
 
 	return current_coord;
 }

@@ -37,13 +37,11 @@ bool ShowColormapSelector(const char* label);
 static bool connectDone = false;
 static bool connectDoneMotor = false;
 char output[1024] = { 0 };
-char cmd[1024] = { 0 };
 AlgCoord algorithm_coord = { 0 };
 int delay_g = 0;
 std::thread motorThread;
 std::thread algorithmThread;
 std::thread algorithmSmartThread;
-std::thread justThread;
 std::jthread adcInitThread;
 ImGuiContext& g = *GImGui;
 std::future<bool> futureAl;
@@ -144,17 +142,12 @@ bool algoSmartThread(AlgCoord& coord, std::shared_ptr<std::promise<bool>> promis
 	return res;
 }
 
-void justThreadFunc(float speed) {
-	motor.just(speed);
-}
-
 StpCoord MotorControlPanel(StpCoord current_coord) {
 	static int counter_10hz = 0;
+	std::string cmd;
 
-	memset(cmd, 0, 1024);
-	strcpy(cmd, ren.stepper_input());
-	strcat_s(cmd, "\n");
-	assert(sizeof(cmd) == 1024);
+	cmd = ren.stepper_input();
+	cmd += "\n";
 
 	if (ren.sendCmd) {
 		motor.write_cmd(cmd);
@@ -275,8 +268,7 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::PushItemWidth(50);
 	ImGui::InputFloat("Speed", &speed);
 	ImGui::SameLine();
-	if (ImGui::Button("Just")) justThread = std::thread(justThreadFunc, speed);
-	if (justThread.joinable()) justThread.join();
+	if (ImGui::Button("Just")) auto future = std::async(std::launch::async, &stepper::just, &motor, speed);
 
 	return current_coord;
 }

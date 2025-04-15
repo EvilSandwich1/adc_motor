@@ -12,6 +12,8 @@
 #include "ADC.h"
 #define ASCII
 
+using namespace std::literals;
+
 class StpCoord {
 public:
 	float x;
@@ -38,7 +40,7 @@ public:
 	~stepper();
 	bool initialize();
 	char* read();
-	void write_cmd(char* outputData);
+	void write_cmd(std::string& outputData);
 	void just(float speed);
 	StpCoord get_current_coord();
 	bool home();

@@ -7,7 +7,6 @@ BOOL fSuccess;
 DWORD dwBuffer = 1024;
 DWORD dwWritten;
 DWORD dwError;
-char inputData[1024] = { 0 };
 DWORD dwRead;
 HANDLE hEvent;
 unsigned long int data = 0;
@@ -140,12 +139,13 @@ bool stepper::initialize() {
             throw runtime_error("SetCommState error\n");
             return false;
         }
-        memset(inputData, 0, sizeof(inputData));
+
         SetupComm(hSerial, 128, 1024);
         COMSTAT comStat;
         ClearCommError(hSerial, &dwError, &comStat);
 
-        write_cmd(const_cast<char*>("\r\n\r\n"));
+        std::string cmd = "\r\n\r\n";
+        write_cmd(cmd);
         return true;
     }
     catch (const std::exception& e){
@@ -155,7 +155,9 @@ bool stepper::initialize() {
 }
 
 char* stepper::read(){
+    char inputData[1024] = { 0 };
     memset(inputData, 0, 1024);
+    dwBuffer = sizeof(inputData) / sizeof(char);
     if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, NULL))
     {
         //WaitForSingleObject(overRead.hEvent, INFINITE);
@@ -164,8 +166,8 @@ char* stepper::read(){
     return inputData;
 }
 
-void stepper::write_cmd(char* outputData) { 
-    if (!WriteFile(hSerial, outputData, sizeof(outputData), &dwWritten, NULL))
+void stepper::write_cmd(std::string& outputData) { 
+    if (!WriteFile(hSerial, outputData.c_str(), sizeof(outputData), &dwWritten, NULL))
     {
         //WaitForSingleObject(overWrite.hEvent, INFINITE);
         //etOverlappedResult(hSerial, &overWrite, &dwWritten, FALSE);
@@ -173,16 +175,16 @@ void stepper::write_cmd(char* outputData) {
 }
 
 void stepper::just(float speed) {
-    char cmd[32];
+    std::string cmd;
     float cur_x = current_coord.x;
 
     if (cur_x < -127.0 || cur_x > -5.0) return;
-    sprintf_s(cmd, "G1 X-5.0 F%f", speed);
+    cmd = std::format("G1X-5.0F%f\n", speed);
     write_cmd(cmd);
 
     while (true) {
         if (current_coord.x == cur_x - 5.0) {
-            sprintf_s(cmd, "X5.0 F%f", speed);
+            cmd = std::format("X5.0F%f\n", speed);
             write_cmd(cmd);
             break;
         }
@@ -190,8 +192,8 @@ void stepper::just(float speed) {
 }
 
 StpCoord stepper::get_current_coord() { 
-    char cmd[4];
-    strcpy_s(cmd, "?\n");
+    std::string cmd;
+    cmd = "?\n";
     write_cmd(cmd);
     char output[1024] = { 0 };
     strcpy_s(output, read());
@@ -257,9 +259,9 @@ StpCoord stepper::get_current_coord() {
 }
 
 bool stepper::home() {
-    char cmd[128];
+    std::string cmd;
     char tmp[128];
-    strcpy_s(cmd, "$H\n");
+    cmd = "$H\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
@@ -267,7 +269,7 @@ bool stepper::home() {
 
     Sleep(500);
 
-    strcpy_s(cmd, "$H Z\n");
+    cmd = "$H Z\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
@@ -275,7 +277,7 @@ bool stepper::home() {
 
     Sleep(500);
 
-    strcpy_s(cmd, "G91\n");
+    cmd = "G91\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
@@ -285,13 +287,13 @@ bool stepper::home() {
 }
 
 bool stepper::move(float val, std::string coord) {
-    char cmd[128];
+    std::string cmd;
 
     if (coord == "x") {
         if (current_coord.x + val >= 0.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0X%f\n", val);
+        cmd = std::format("G0X%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -301,7 +303,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.y + val >= 0.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0Y%f\n", val);
+        cmd = std::format("G0Y%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -311,7 +313,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.z + val >= 1.0f) {
             return false;
         }
-        sprintf_s(cmd, "G0Z%f\n", val);
+        cmd = std::format("G0Z%f\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -336,10 +338,10 @@ void stepper::close() {
 
 bool stepper::algorithm(AlgCoord coord, ADC adc, int delay) {
 
-    char cmd[32];
+    std::string cmd;
     char data_s[1024];
     float data;
-    strcpy_s(cmd, "G90\n");
+    cmd = "G90\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
@@ -401,7 +403,7 @@ bool stepper::algorithm(AlgCoord coord, ADC adc, int delay) {
         } while (j <= ((coord.end_y - coord.begin_y) / coord.step_y));
     } while (i <= ((coord.end_x - coord.begin_x) / coord.step_x));
     
-    strcpy_s(cmd, "G91\n");
+    cmd = "G91\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
@@ -411,11 +413,11 @@ bool stepper::algorithm(AlgCoord coord, ADC adc, int delay) {
 }
 
 bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
-    char cmd[32];
+    std::string cmd;
     char data_s[1024];
     float data;
 
-    strcpy_s(cmd, "G90\n");
+    cmd = "G90\n";
     this_thread::sleep_for(100ms);
     write_cmd(cmd);
     this_thread::sleep_for(100ms);
@@ -505,7 +507,7 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
         } while (j <= ((coord.end_y - coord.begin_y) / coord.step_y));
     } while (i <= ((coord.end_x - coord.begin_x) / coord.step_x));
 
-    strcpy_s(cmd, "G91\n");
+    cmd = "G91\n";
     this_thread::sleep_for(100ms);
     write_cmd(cmd);
     this_thread::sleep_for(100ms);
@@ -516,8 +518,8 @@ bool stepper::algorithm_smart(AlgCoord coord, ADC adc, int delay) {
 } 
 
 void stepper::test(AlgCoord coord) {
-    char cmd[32];
-    strcpy_s(cmd, "G90\n");
+    std::string cmd;
+    cmd = "G90\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);

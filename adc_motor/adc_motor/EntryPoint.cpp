@@ -268,7 +268,10 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::PushItemWidth(50);
 	ImGui::InputFloat("Speed", &speed);
 	ImGui::SameLine();
-	if (ImGui::Button("Just")) auto future = std::async(std::launch::async, &stepper::just, &motor, speed);
+	if (ImGui::Button("Just")) {
+		auto future = std::thread(&stepper::just, &motor, speed);
+		future.detach();
+	}
 
 	return current_coord;
 }

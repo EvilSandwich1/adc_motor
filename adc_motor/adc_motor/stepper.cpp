@@ -179,12 +179,13 @@ void stepper::just(float speed) {
     float cur_x = current_coord.x;
 
     if (cur_x < -127.0 || cur_x > -5.0) return;
-    cmd = std::format("G1X-5.0F%f\n", speed);
+    cmd = std::format("G1X-5F{}\n", speed);
     write_cmd(cmd);
 
     while (true) {
+        //current_coord = get_current_coord();
         if (current_coord.x == cur_x - 5.0) {
-            cmd = std::format("X5.0F%f\n", speed);
+            cmd = std::format("G1X5F{}\n", speed);
             write_cmd(cmd);
             break;
         }
@@ -293,7 +294,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.x + val >= 0.0f) {
             return false;
         }
-        cmd = std::format("G0X%f\n", val);
+        cmd = std::format("G0X{}\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -303,7 +304,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.y + val >= 0.0f) {
             return false;
         }
-        cmd = std::format("G0Y%f\n", val);
+        cmd = std::format("G0Y{}\n", val);
         write_cmd(cmd);
         read();
         return true;
@@ -313,7 +314,7 @@ bool stepper::move(float val, std::string coord) {
         if (current_coord.z + val >= 1.0f) {
             return false;
         }
-        cmd = std::format("G0Z%f\n", val);
+        cmd = std::format("G0Z{}\n", val);
         write_cmd(cmd);
         read();
         return true;

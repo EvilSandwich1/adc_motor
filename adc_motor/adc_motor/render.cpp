@@ -625,7 +625,7 @@ void render::visualize() {
         max_val = *max_element(vis_values, vis_values + border_x[1]);
         min_val = *min_element(vis_values, vis_values + border_x[1]);
 
-        ImPlot::PushColormap(ImPlotColormap_Greys);
+        ImPlot::PushColormap(ImPlotColormap_Viridis);
         if (ImPlot::BeginPlot("##Heatmap1", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
             ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
             ImPlot::PlotHeatmap("heat", vis_values, border_y[1], unique_y + 1, min_val, max_val, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1), ImPlotHeatmapFlags_ColMajor);

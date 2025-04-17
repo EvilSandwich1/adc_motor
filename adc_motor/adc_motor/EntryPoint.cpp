@@ -272,7 +272,6 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 		auto future = std::thread(&stepper::just, &motor, speed);
 		future.detach();
 	}
-
 	return current_coord;
 }
 

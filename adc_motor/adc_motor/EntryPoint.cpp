@@ -47,6 +47,7 @@ ImGuiContext& g = *GImGui;
 std::future<bool> futureAl;
 std::future<bool> futureAlSmart;
 std::future<bool> futureInit;
+std::thread futureJust;
 
 static void HelpMarker(const char* desc)
 {
@@ -268,10 +269,19 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 	ImGui::PushItemWidth(50);
 	ImGui::InputFloat("Speed", &speed);
 	ImGui::SameLine();
+	static int counter = 0;
 	if (ImGui::Button("Just")) {
-		auto future = std::thread(&stepper::just, &motor, speed);
-		future.detach();
+		if (motor.global_just_flg == false) {
+			motor.global_just_flg = true;
+			futureJust = std::thread(&stepper::just, &motor, speed);
+		}
+		else if (motor.global_just_flg == true){
+			motor.global_just_flg = false;
+			if (futureJust.joinable())
+			futureJust.detach();
+		}
 	}
+	
 	return current_coord;
 }
 

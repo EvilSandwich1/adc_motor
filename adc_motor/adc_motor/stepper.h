@@ -49,5 +49,6 @@ public:
 	bool algorithm_smart(AlgCoord coord, ADC adc, int delay);
 	void test(AlgCoord coord);
 	void close();
+	bool global_just_flg;
 };
 

@@ -14,6 +14,7 @@ bool check = true;
 //OVERLAPPED overRead, overWrite;
 std::ofstream file_data;
 //std::ofstream log_file;
+bool global_just_flg = false;
 
 using namespace std;
 
@@ -178,16 +179,23 @@ void stepper::just(float speed) {
     std::string cmd;
     float cur_x = current_coord.x;
 
-    if (cur_x < -127.0 || cur_x > -5.0) return;
-    cmd = std::format("G1X-5F{}\n", speed);
-    write_cmd(cmd);
+    while (global_just_flg) {
+        if (cur_x < -132.0 || cur_x > -11.0) return;
+        while (true) {
+            if (current_coord.x == cur_x) {
+                cmd = std::format("G1X10F{}\n", speed);
+                write_cmd(cmd);
+                break;
+            }
+        }
 
-    while (true) {
-        //current_coord = get_current_coord();
-        if (current_coord.x == cur_x - 5.0) {
-            cmd = std::format("G1X5F{}\n", speed);
-            write_cmd(cmd);
-            break;
+        while (true) {
+            //current_coord = get_current_coord();
+            if (current_coord.x == cur_x + 10.0) {
+                cmd = std::format("G1X-10F{}\n", speed);
+                write_cmd(cmd);
+                break;
+            }
         }
     }
 }

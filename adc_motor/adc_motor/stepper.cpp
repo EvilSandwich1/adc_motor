@@ -156,7 +156,8 @@ bool stepper::initialize() {
 }
 
 std::string stepper::read(){
-    /*char inputData[1024] = {0};
+
+    char inputData[1024] = {0};
     memset(inputData, 0, 1024);
     dwBuffer = sizeof(inputData) / sizeof(char);
     if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, NULL))
@@ -164,9 +165,11 @@ std::string stepper::read(){
         //WaitForSingleObject(overRead.hEvent, INFINITE);
         //GetOverlappedResult(hSerial, &overRead, &dwRead, FALSE);
     }
-    return inputData;*/
 
-    std::string line;
+    std::string line(inputData);
+    return line;
+
+    /*std::string line;
     char buffer[1];
     DWORD bytesRead;
 
@@ -185,7 +188,7 @@ std::string stepper::read(){
             }
             line += buffer[0];
         }
-    }
+    }*/
 }
 
 void stepper::write_cmd(std::string& outputData) { 

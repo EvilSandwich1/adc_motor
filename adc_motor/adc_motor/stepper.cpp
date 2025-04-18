@@ -155,8 +155,8 @@ bool stepper::initialize() {
     }
 }
 
-char* stepper::read(){
-    char inputData[1024] = { 0 };
+std::string stepper::read(){
+    /*char inputData[1024] = {0};
     memset(inputData, 0, 1024);
     dwBuffer = sizeof(inputData) / sizeof(char);
     if (!ReadFile(hSerial, inputData, dwBuffer, &dwRead, NULL))
@@ -164,7 +164,28 @@ char* stepper::read(){
         //WaitForSingleObject(overRead.hEvent, INFINITE);
         //GetOverlappedResult(hSerial, &overRead, &dwRead, FALSE);
     }
-    return inputData;
+    return inputData;*/
+
+    std::string line;
+    char buffer[1];
+    DWORD bytesRead;
+
+    while (true) {
+        if (!ReadFile(hSerial, buffer, 1, &bytesRead, NULL)) {
+            std::cerr << "Ошибка чтения\n";
+            return ""s;
+        }
+
+        if (bytesRead > 0) {
+            if (buffer[0] == '\n') {  // Конец строки (может быть '\r\n' в Windows)
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();  // Удаляем '\r', если есть
+                }
+                return line;
+            }
+            line += buffer[0];
+        }
+    }
 }
 
 void stepper::write_cmd(std::string& outputData) { 
@@ -204,9 +225,7 @@ StpCoord stepper::get_current_coord() {
     std::string cmd;
     cmd = "?\n";
     write_cmd(cmd);
-    char output[1024] = { 0 };
-    strcpy_s(output, read());
-    std::string output_s = output;
+    std::string output_s = read();
     std::string tmp;
     if (output_s.empty() || !output_s.contains("WPos") || output_s[0] != '<' || !output_s.contains("."))
         return current_coord;
@@ -219,10 +238,12 @@ StpCoord stepper::get_current_coord() {
             break;
         tmp += output_s[i];
     }
-    if (tmp.contains(",")) {
-        tmp.erase(tmp.find(","));
-    }
+    
+    if (tmp.contains(",")) tmp.erase(tmp.find(","));
+    if (tmp.empty()) return current_coord;
+
     current_coord.x = stof(tmp);
+
     tmp.clear();
     output_s.erase(0, output_s.find(",") + 1);
 
@@ -234,10 +255,11 @@ StpCoord stepper::get_current_coord() {
             break;
         tmp += output_s[i];
     }
-    if (tmp.contains(",")) {
-        tmp.erase(tmp.find(","));
-    }
+    if (tmp.contains(",")) tmp.erase(tmp.find(","));
+    if (tmp.empty()) return current_coord;
+
     current_coord.y = stof(tmp);
+    
     tmp.clear();
     output_s.erase(0, output_s.find(",") + 1);
 
@@ -250,9 +272,7 @@ StpCoord stepper::get_current_coord() {
                 break;
             tmp += output_s[i];
         }
-        if (tmp.contains("|")) {
-            tmp.erase(tmp.find("|"));
-        }
+        if (tmp.contains("|")) tmp.erase(tmp.find("|"));
     }
     else {
         for (int i = 0; i < output_s.size() - 1; i++) {
@@ -261,6 +281,8 @@ StpCoord stepper::get_current_coord() {
             tmp += output_s[i];
         }
     }
+    if (tmp.empty()) return current_coord;
+
     current_coord.z = stof(tmp);
     tmp.clear();
 
@@ -269,12 +291,12 @@ StpCoord stepper::get_current_coord() {
 
 bool stepper::home() {
     std::string cmd;
-    char tmp[128];
+
     cmd = "$H\n";
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    tmp[0] = *read();
+    read();
 
     Sleep(500);
 
@@ -282,7 +304,7 @@ bool stepper::home() {
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    tmp[0] = *read();
+    read();
 
     Sleep(500);
 
@@ -290,7 +312,7 @@ bool stepper::home() {
     Sleep(100);
     write_cmd(cmd);
     Sleep(100);
-    tmp[0] = *read();
+    read();
 
     return true;
 }

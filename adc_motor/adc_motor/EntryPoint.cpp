@@ -154,7 +154,7 @@ StpCoord MotorControlPanel(StpCoord current_coord) {
 		motor.write_cmd(cmd);
 		memset(output, 0, 1024 * sizeof(char));
 		Sleep(100);
-		strcpy(output, motor.read());
+		strcpy(output, motor.read().c_str());
 		Sleep(100);
 	}
 	ren.stepper_output(output);

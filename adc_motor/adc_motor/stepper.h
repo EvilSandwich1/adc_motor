@@ -39,7 +39,7 @@ public:
 	explicit stepper();
 	~stepper();
 	bool initialize();
-	char* read();
+	std::string read();
 	void write_cmd(std::string& outputData);
 	void just(float speed);
 	StpCoord get_current_coord();

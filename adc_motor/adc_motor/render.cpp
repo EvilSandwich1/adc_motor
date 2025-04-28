@@ -582,7 +582,8 @@ void render::visualize() {
         static bool rewrite = false;
         static float max_val = *max_element(vis_values, vis_values + border_x[1]);
         static float min_val = *min_element(vis_values, vis_values + border_x[1]);
-        static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
+        static ImPlotAxisFlags axes_flags_x = ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_AutoFit;
+        static ImPlotAxisFlags axes_flags_y = ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_Invert;
 
         if (current_x_set == 0) {
             end_l = true;
@@ -625,16 +626,22 @@ void render::visualize() {
         max_val = *max_element(vis_values, vis_values + border_x[1]);
         min_val = *min_element(vis_values, vis_values + border_x[1]);
 
+        static float min_y = std::max(dataStr[0].y, dataStr[border_x[1]-1].y);
+        static float min_z = std::max(dataStr[0].z, dataStr[border_x[1]-1].z);
+
+        static float max_y = std::min(dataStr[0].y, dataStr[border_x[1]-1].y);
+        static float max_z = std::min(dataStr[0].z, dataStr[border_x[1]-1].z);
+
         ImPlot::PushColormap(ImPlotColormap_Viridis);
         if (ImPlot::BeginPlot("##Heatmap1", ImVec2(350, 350), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
-            ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-            ImPlot::PlotHeatmap("heat", vis_values, border_y[1], unique_y + 1, min_val, max_val, nullptr, ImPlotPoint(0, 0), ImPlotPoint(1, 1), ImPlotHeatmapFlags_ColMajor);
+            ImPlot::SetupAxes(nullptr, nullptr, axes_flags_x, axes_flags_y);
+            ImPlot::PlotHeatmap("heat", vis_values, border_y[1], unique_y + 1, min_val, max_val, nullptr, ImPlotPoint(max_y, min_z), ImPlotPoint(min_y, max_z), ImPlotHeatmapFlags_ColMajor);
             ImPlot::EndPlot();
         }
         ImGui::SameLine();
         ImPlot::ColormapScale("##HeatScale1", min_val, max_val, ImVec2(60, 225));
         ImGui::Text("Current x = %f", dataStr[border_x[current_x_set]].x);
-
+        ImPlot::PopColormap();
     }
     else {
         

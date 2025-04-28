@@ -224,6 +224,41 @@ void stepper::just(float speed) {
     }
 }
 
+bool is_valid_float_string(const std::string& str) {
+    if (str.empty()) return false;
+
+    size_t start_pos = 0;
+    bool has_digit = false;
+    bool has_dot = false;
+
+    // Проверяем начальный знак
+    if (str[0] == '+' || str[0] == '-') {
+        start_pos = 1;
+    }
+
+    for (size_t i = start_pos; i < str.size(); ++i) {
+        char c = str[i];
+
+        if (isdigit(c)) {
+            has_digit = true;
+            continue;
+        }
+
+        if (c == '.') {
+            // Не может быть двух точек
+            if (has_dot) return false;
+            has_dot = true;
+            continue;
+        }
+
+        // Любой другой символ — недопустим
+        return false;
+    }
+
+    // Должна быть хотя бы одна цифра
+    return has_digit;
+}
+
 StpCoord stepper::get_current_coord() { 
     std::string cmd;
     cmd = "?\n";
@@ -245,6 +280,8 @@ StpCoord stepper::get_current_coord() {
     if (tmp.contains(",")) tmp.erase(tmp.find(","));
     if (tmp.empty()) return current_coord;
 
+    if (!is_valid_float_string(tmp)) return current_coord;
+
     current_coord.x = stof(tmp);
 
     tmp.clear();
@@ -260,6 +297,8 @@ StpCoord stepper::get_current_coord() {
     }
     if (tmp.contains(",")) tmp.erase(tmp.find(","));
     if (tmp.empty()) return current_coord;
+
+    if (!is_valid_float_string(tmp)) return current_coord;
 
     current_coord.y = stof(tmp);
     
@@ -285,6 +324,8 @@ StpCoord stepper::get_current_coord() {
         }
     }
     if (tmp.empty()) return current_coord;
+
+    if (!is_valid_float_string(tmp)) return current_coord;
 
     current_coord.z = stof(tmp);
     tmp.clear();
